@@ -15,6 +15,7 @@
     .btn { padding: 12px 16px; border: none; border-radius: 6px; background: #1e40af; color: #e2e8f0; font-weight: 600; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.35); min-height: 44px; touch-action: manipulation; }
     .btn:hover { background: #1d4ed8; }
     .btn:active { background: #1e3a8a; transform: scale(0.98); }
+    #btn-refresh { font-size: 18px; padding: 10px 14px; min-width: 44px; }
     @media (max-width: 768px) {
       #ui-panel { flex-direction: column; align-items: flex-start; }
       .btn { width: 100%; font-size: 14px; }
@@ -24,12 +25,13 @@
 </head>
 <body>
   <div id="ui-panel">
+    <button class="btn" id="btn-refresh" title="Refrescar">🔄</button>
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
     <button class="btn" data-view="iso">Vista isometrica</button>
     <button class="btn" data-view="top">Vista superior</button>
     <button class="btn" data-view="wall2">Vista pared 2</button>
     <button class="btn" data-view="wall4">Vista pared 4</button>
-    <div class="badge" id="version-badge">v0.6.2</div>
+    <div class="badge" id="version-badge">v0.7.0</div>
   </div>
   <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
   <script type="importmap">
@@ -45,8 +47,38 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v0.6.2';
+    const APP_VERSION = 'v0.7.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
+
+    // Sistema anti-caché: verificar nueva versión cada 30 segundos
+    async function checkForUpdates() {
+      try {
+        const response = await fetch(window.location.href, { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        const html = await response.text();
+        const versionMatch = html.match(/const APP_VERSION = '([^']+)'/);
+        if (versionMatch && versionMatch[1] !== APP_VERSION) {
+          console.log(`Nueva versión disponible: ${versionMatch[1]}`);
+          if (confirm(`Nueva versión ${versionMatch[1]} disponible. ¿Recargar ahora?`)) {
+            window.location.reload(true);
+          }
+        }
+      } catch (e) {
+        console.log('No se pudo verificar actualizaciones:', e);
+      }
+    }
+    
+    // Verificar cada 30 segundos
+    setInterval(checkForUpdates, 30000);
+    // Primera verificación después de 5 segundos
+    setTimeout(checkForUpdates, 5000);
+
+    // Botón de refresh manual
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      window.location.reload(true);
+    });
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0b1220);
