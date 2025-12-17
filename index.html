@@ -1,14 +1,174 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Tobogán Decomiso 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tobogan Decomiso 3D</title>
   <style>
-    body { margin: 0; overflow: hidden; }
-    iframe { border: none; width: 100vw; height: 100vh; }
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: #0b1220; }
+    #ui-panel { position: fixed; top: 12px; left: 12px; z-index: 10; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn { padding: 10px 14px; border: none; border-radius: 6px; background: #1e40af; color: #e2e8f0; font-weight: 600; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+    .btn:hover { background: #1d4ed8; }
+    .badge { padding: 8px 12px; border-radius: 6px; background: #0f172a; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 6px 18px rgba(0,0,0,0.35); font-size: 13px; }
   </style>
 </head>
 <body>
-  <iframe src="https://cdn.jsdelivr.net/gh/orelcain/tobogan-app@main/app.html" allow="fullscreen"></iframe>
+  <div id="ui-panel">
+    <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
+    <button class="btn" data-view="iso">Vista isometrica</button>
+    <button class="btn" data-view="top">Vista superior</button>
+    <button class="btn" data-view="wall2">Vista pared 2</button>
+    <button class="btn" data-view="wall4">Vista pared 4</button>
+    <div class="badge" id="version-badge">v0.5.0</div>
+  </div>
+  <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+    const APP_VERSION = 'v0.5.0';
+    document.getElementById('version-badge').textContent = APP_VERSION;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1220);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight - 40);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / (window.innerHeight - 40), 0.1, 10000);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.1);
+    dir.position.set(2000, 2500, 1200);
+    dir.castShadow = true;
+    scene.add(dir);
+
+    const ROOM_W = 4000, ROOM_L = 4000, ROOM_H = 4000, WALL_THK = 115;
+    const BIN_W = 1200, BIN_L = 1000, BIN_H = 900, BIN_THK = 35;
+    const BIN_POS_X = ROOM_W/2 - WALL_THK - BIN_W/2 - 100;
+    const BIN_POS_Z = ROOM_L/2 - WALL_THK - BIN_L/2 - 700;
+
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const wallGroup = new THREE.Group();
+    const wallMat = new THREE.MeshPhysicalMaterial({ color: 0x9fb8d6, transparent: true, opacity: 0.35, transmission: 0.25 });
+    const halfW = ROOM_W / 2 - WALL_THK / 2, halfL = ROOM_L / 2 - WALL_THK / 2, wallH = ROOM_H - 100;
+    
+    [[ROOM_W, wallH, WALL_THK, [0, wallH/2, -halfL], 0],
+     [ROOM_W, wallH, WALL_THK, [0, wallH/2, halfL], 0],
+     [ROOM_L, wallH, WALL_THK, [-halfW, wallH/2, 0], Math.PI/2],
+     [ROOM_L, wallH, WALL_THK, [halfW, wallH/2, 0], Math.PI/2]].forEach(([w,h,d,pos,rot]) => {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wallMat);
+      wall.position.set(...pos);
+      wall.rotation.y = rot;
+      wallGroup.add(wall);
+    });
+    scene.add(wallGroup);
+
+    function makeLabel(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0,0,256,256);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 140px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 128, 128);
+      const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }));
+      spr.scale.set(600, 600, 1);
+      return spr;
+    }
+    const labels = [makeLabel('1'), makeLabel('2'), makeLabel('3'), makeLabel('4')];
+    labels[0].position.set(-ROOM_W/2 + WALL_THK + 20, ROOM_H/2, 0);
+    labels[1].position.set(ROOM_W/2 - WALL_THK - 20, ROOM_H/2, 0);
+    labels[2].position.set(0, ROOM_H/2, -ROOM_L/2 + WALL_THK + 20);
+    labels[3].position.set(0, ROOM_H/2, ROOM_L/2 - WALL_THK - 20);
+    labels.forEach(l => scene.add(l));
+
+    const binGroup = new THREE.Group();
+    const binMat = new THREE.MeshStandardMaterial({ color: 0x1f66d8, transparent: true, opacity: 0.95 });
+    const base = new THREE.Mesh(new RoundedBoxGeometry(BIN_W, BIN_THK, BIN_L, 4, BIN_THK*0.5), binMat);
+    base.position.y = BIN_THK/2;
+    binGroup.add(base);
+
+    const wallSideGeom = new RoundedBoxGeometry(BIN_THK, BIN_H, BIN_L - 2*BIN_THK + 20, 4, BIN_THK*0.45);
+    const wallFrontGeom = new RoundedBoxGeometry(BIN_W - 2*BIN_THK + 20, BIN_H, BIN_THK, 4, BIN_THK*0.45);
+    
+    const wL = new THREE.Mesh(wallSideGeom, binMat);
+    wL.position.set(-BIN_W/2 + BIN_THK/2, BIN_THK/2 + BIN_H/2, 0);
+    const wR = wL.clone(); wR.position.x = BIN_W/2 - BIN_THK/2;
+    const wF = new THREE.Mesh(wallFrontGeom, binMat);
+    wF.position.set(0, BIN_THK/2 + BIN_H/2, BIN_L/2 - BIN_THK/2);
+    const wB = wF.clone(); wB.position.z = -BIN_L/2 + BIN_THK/2;
+    [wL, wR, wF, wB].forEach(w => binGroup.add(w));
+
+    const footMat = new THREE.MeshStandardMaterial({ color: 0x104caa });
+    [-BIN_W/3, 0, BIN_W/3].forEach(x => {
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(BIN_W/3 - 40, 120, BIN_L/2), footMat);
+      foot.position.set(x, 60, 0);
+      binGroup.add(foot);
+    });
+
+    binGroup.position.set(BIN_POS_X, 0, BIN_POS_Z);
+    scene.add(binGroup);
+
+    const views = {
+      iso: { pos: [1800, 1800, 2000], target: [0, 600, 0] },
+      top: { pos: [0, 3000, 0], target: [0, 0, 0] },
+      wall2: { pos: [2200, 800, 0], target: [0, 600, 0] },
+      wall4: { pos: [0, 800, 2200], target: [0, 600, 0] }
+    };
+    function setView(key) {
+      const v = views[key];
+      if (!v) return;
+      camera.position.set(...v.pos);
+      controls.target.set(...v.target);
+      controls.update();
+    }
+    setView('iso');
+
+    let wallsVisible = true;
+    document.getElementById('btn-toggle-walls').addEventListener('click', () => {
+      wallsVisible = !wallsVisible;
+      wallGroup.visible = wallsVisible;
+      labels.forEach(l => l.visible = wallsVisible);
+      document.getElementById('btn-toggle-walls').textContent = wallsVisible ? 'Ocultar paneles' : 'Mostrar paneles';
+    });
+
+    document.querySelectorAll('[data-view]').forEach(btn => {
+      btn.addEventListener('click', () => setView(btn.dataset.view));
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / (window.innerHeight - 40);
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight - 40);
+    });
+  </script>
 </body>
 </html>
