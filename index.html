@@ -27,7 +27,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-refresh" title="Refrescar">🔄</button>
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v0.8.0</div>
+    <div class="badge" id="version-badge">v0.8.1</div>
   </div>
   <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
   <script type="importmap">
@@ -43,7 +43,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v0.8.0';
+    const APP_VERSION = 'v0.8.1';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -136,14 +136,23 @@
     }
     
     // Pared 4 (trasera, +z): paneles de 1m con entrada de 2m a 50cm de pared 1
-    // Entrada va desde x=-1500 hasta x=500 (2000mm, comenzando 500mm desde x=-2000)
-    // Panel izquierdo: -2000 a -1500 (500mm)
+    // Entrada: 2000mm ancho x 2000mm alto, comenzando 500mm desde esquina
+    const DOOR_HEIGHT = 2000;
+    
+    // Panel izquierdo: -2000 a -1500 (500mm, altura completa)
     const panel4a = new THREE.Mesh(new THREE.BoxGeometry(500, wallH, WALL_THK), wallMat);
     panel4a.position.set(-ROOM_W/2 + 250, wallH/2, halfL);
     panel4a.renderOrder = 999;
     wallGroup.add(panel4a);
     
-    // Panel derecho: 500 a 2000 (1500mm)
+    // Panel superior sobre la entrada: 2000mm ancho
+    const topPanelHeight = wallH - DOOR_HEIGHT;
+    const panel4top = new THREE.Mesh(new THREE.BoxGeometry(2000, topPanelHeight, WALL_THK), wallMat);
+    panel4top.position.set(-500, DOOR_HEIGHT + topPanelHeight/2, halfL);
+    panel4top.renderOrder = 999;
+    wallGroup.add(panel4top);
+    
+    // Panel derecho: 500 a 2000 (1500mm, altura completa)
     const panel4b = new THREE.Mesh(new THREE.BoxGeometry(1500, wallH, WALL_THK), wallMat);
     panel4b.position.set(ROOM_W/2 - 750, wallH/2, halfL);
     panel4b.renderOrder = 999;
