@@ -27,7 +27,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-refresh" title="Refrescar">🔄</button>
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v0.7.1</div>
+    <div class="badge" id="version-badge">v0.8.0</div>
   </div>
   <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
   <script type="importmap">
@@ -43,7 +43,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v0.7.1';
+    const APP_VERSION = 'v0.8.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -125,16 +125,45 @@
     });
     const halfW = ROOM_W / 2 - WALL_THK / 2, halfL = ROOM_L / 2 - WALL_THK / 2, wallH = ROOM_H - 100;
     
-    [[ROOM_W, wallH, WALL_THK, [0, wallH/2, -halfL], 0],
-     [ROOM_W, wallH, WALL_THK, [0, wallH/2, halfL], 0],
-     [ROOM_L, wallH, WALL_THK, [-halfW, wallH/2, 0], Math.PI/2],
-     [ROOM_L, wallH, WALL_THK, [halfW, wallH/2, 0], Math.PI/2]].forEach(([w,h,d,pos,rot]) => {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wallMat);
-      wall.position.set(...pos);
-      wall.rotation.y = rot;
-      wall.renderOrder = 999;
-      wallGroup.add(wall);
-    });
+    const PANEL_WIDTH = 1000;
+    
+    // Pared 3 (frontal, -z): paneles de 1m
+    for (let i = 0; i < 4; i++) {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(PANEL_WIDTH, wallH, WALL_THK), wallMat);
+      panel.position.set(-ROOM_W/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH, wallH/2, -halfL);
+      panel.renderOrder = 999;
+      wallGroup.add(panel);
+    }
+    
+    // Pared 4 (trasera, +z): paneles de 1m con entrada de 2m a 50cm de pared 1
+    // Entrada va desde x=-1500 hasta x=500 (2000mm, comenzando 500mm desde x=-2000)
+    // Panel izquierdo: -2000 a -1500 (500mm)
+    const panel4a = new THREE.Mesh(new THREE.BoxGeometry(500, wallH, WALL_THK), wallMat);
+    panel4a.position.set(-ROOM_W/2 + 250, wallH/2, halfL);
+    panel4a.renderOrder = 999;
+    wallGroup.add(panel4a);
+    
+    // Panel derecho: 500 a 2000 (1500mm)
+    const panel4b = new THREE.Mesh(new THREE.BoxGeometry(1500, wallH, WALL_THK), wallMat);
+    panel4b.position.set(ROOM_W/2 - 750, wallH/2, halfL);
+    panel4b.renderOrder = 999;
+    wallGroup.add(panel4b);
+    
+    // Pared 1 (izquierda, -x): paneles de 1m
+    for (let i = 0; i < 4; i++) {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH), wallMat);
+      panel.position.set(-halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
+      panel.renderOrder = 999;
+      wallGroup.add(panel);
+    }
+    
+    // Pared 2 (derecha, +x): paneles de 1m
+    for (let i = 0; i < 4; i++) {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH), wallMat);
+      panel.position.set(halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
+      panel.renderOrder = 999;
+      wallGroup.add(panel);
+    }
     scene.add(wallGroup);
 
     function makeLabel(text) {
