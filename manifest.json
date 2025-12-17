@@ -1,0 +1,24 @@
+{
+  "name": "Tobogan Decomiso 3D",
+  "short_name": "Tobogan 3D",
+  "description": "Visualizador 3D de sala con contenedor de decomiso",
+  "start_url": "/tobogan-app/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#1e40af",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%231e40af' width='192' height='192'/%3E%3Cpath fill='%23fff' d='M48 96h96v64H48z'/%3E%3Cpath fill='%239fb8d6' d='M48 96h96v8H48z'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%231e40af' width='512' height='512'/%3E%3Cpath fill='%23fff' d='M128 256h256v170H128z'/%3E%3Cpath fill='%239fb8d6' d='M128 256h256v20H128z'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
