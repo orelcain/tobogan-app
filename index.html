@@ -27,11 +27,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-refresh" title="Refrescar">🔄</button>
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <button class="btn" data-view="iso">Vista isometrica</button>
-    <button class="btn" data-view="top">Vista superior</button>
-    <button class="btn" data-view="wall2">Vista pared 2</button>
-    <button class="btn" data-view="wall4">Vista pared 4</button>
-    <div class="badge" id="version-badge">v0.7.0</div>
+    <div class="badge" id="version-badge">v0.7.1</div>
   </div>
   <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
   <script type="importmap">
@@ -47,7 +43,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v0.7.0';
+    const APP_VERSION = 'v0.7.1';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -191,20 +187,10 @@
     binGroup.renderOrder = 1;
     scene.add(binGroup);
 
-    const views = {
-      iso: { pos: [3500, 3500, 3800], target: [0, 600, 0] },
-      top: { pos: [0, 6000, 0], target: [0, 0, 0] },
-      wall2: { pos: [4500, 1400, 0], target: [0, 600, 0] },
-      wall4: { pos: [0, 1400, 4500], target: [0, 600, 0] }
-    };
-    function setView(key) {
-      const v = views[key];
-      if (!v) return;
-      camera.position.set(...v.pos);
-      controls.target.set(...v.target);
-      controls.update();
-    }
-    setView('iso');
+    // Vista inicial isométrica
+    camera.position.set(3500, 3500, 3800);
+    controls.target.set(0, 600, 0);
+    controls.update();
 
     let wallsVisible = true;
     document.getElementById('btn-toggle-walls').addEventListener('click', () => {
@@ -212,10 +198,6 @@
       wallGroup.visible = wallsVisible;
       labels.forEach(l => l.visible = wallsVisible);
       document.getElementById('btn-toggle-walls').textContent = wallsVisible ? 'Ocultar paneles' : 'Mostrar paneles';
-    });
-
-    document.querySelectorAll('[data-view]').forEach(btn => {
-      btn.addEventListener('click', () => setView(btn.dataset.view));
     });
 
     function animate() {
