@@ -40,10 +40,10 @@
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
     <button class="btn" id="btn-guillotina">Abrir guillotina</button>
-    <div class="badge" id="version-badge">v2.6.1</div>
+    <div class="badge" id="version-badge">v2.6.2</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
-  <div id="bin-fill">🐟 Bin: 0%</div>
+  <div id="bin-fill">Bin: 0</div>
   <div id="view-panel">
     <button class="btn-view" data-view="A">Vista A</button>
     <button class="btn-view" data-view="B">Vista B</button>
@@ -64,7 +64,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.6.1';
+    const APP_VERSION = 'v2.6.2';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -1050,13 +1050,13 @@
       // También mostrar cantidad de pescados
       const fishCount = fishInBin.length;
       
-      // Actualizar indicador
+      // Actualizar indicador (solo cantidad, más estable)
       const binFillEl = document.getElementById('bin-fill');
-      binFillEl.textContent = `🐟 Bin: ${fillPercent}% (${fishCount})`;
+      binFillEl.textContent = `Bin: ${fishCount} peces`;
       binFillEl.className = '';
       if (fillPercent >= 100) {
         binFillEl.classList.add('overflow');
-        binFillEl.textContent = `🐟 ¡REBALSANDO! ${fillPercent}% (${fishCount})`;
+        binFillEl.textContent = `¡LLENO! ${fishCount} peces`;
       } else if (fillPercent >= 70) {
         binFillEl.classList.add('warning');
       }
