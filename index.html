@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.4.0';
+    const APP_VERSION = 'v1.4.1';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -119,7 +119,7 @@
 
     const ROOM_W = 4000, ROOM_L = 4000, ROOM_H = 4000, WALL_THK = 115;
     const BIN_W = 1400, BIN_L = 1000, BIN_H = 900, BIN_THK = 35; // BIN_W: 1200 + 200
-    const BIN_POS_X = ROOM_W/2 - WALL_THK - BIN_W/2 - 100 - 300 + 200 - 100; // -10cm hacia pared 1
+    const BIN_POS_X = ROOM_W/2 - WALL_THK - BIN_W/2 - 100 - 300 + 200 - 100 + 100; // +10cm hacia pared 2
     const BIN_POS_Z = ROOM_L/2 - WALL_THK - BIN_L/2 - 700 + 90 + 70; // Movido hacia pared 4 +7cm
 
     // Piso de concreto con 50cm de profundidad
@@ -171,8 +171,8 @@
     const DOOR_WIDTH = 1700;
     const DOOR_HEIGHT = 2000;
     const DOOR_X_START = -ROOM_W/2 + 300; // 300mm desde pared 1
-    const TOBOGAN_HOLE_W = 400;
-    const TOBOGAN_HOLE_H = 300;
+    const TOBOGAN_HOLE_W = 450; // 400 + 50
+    const TOBOGAN_HOLE_H = 350; // 300 + 50
     const TOBOGAN_HOLE_Y = 1450; // +100mm: 1350 + 100
     
     // Crear Shape para pared completa con huecos (desde el piso)
@@ -295,25 +295,38 @@
     const wB = wF.clone(); wB.position.z = -BIN_L/2 + BIN_THK/2;
     [wL, wR, wF, wB].forEach(w => binGroup.add(w));
 
-    // Pescados decomisados (30 unidades)
+    // Pescados decomisados (30 unidades) con forma realista
     const fishMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.3, roughness: 0.7 });
     for (let i = 0; i < 30; i++) {
-      const fishBody = new THREE.Mesh(
-        new THREE.CapsuleGeometry(15 + Math.random()*10, 60 + Math.random()*40, 4, 8),
-        fishMat
-      );
+      const fish = new THREE.Group();
+      
+      // Cuerpo del pescado (elipsoide)
+      const bodyLength = 60 + Math.random() * 40;
+      const bodyWidth = 20 + Math.random() * 15;
+      const bodyGeom = new THREE.SphereGeometry(bodyWidth, 8, 6);
+      bodyGeom.scale(bodyLength/bodyWidth/2, 1, 0.7);
+      const body = new THREE.Mesh(bodyGeom, fishMat);
+      fish.add(body);
+      
+      // Cola triangular
+      const tailGeom = new THREE.ConeGeometry(bodyWidth * 0.6, bodyWidth * 1.2, 3);
+      const tail = new THREE.Mesh(tailGeom, fishMat);
+      tail.rotation.z = Math.PI / 2;
+      tail.position.x = -bodyLength / 2;
+      fish.add(tail);
+      
       // Posicionar aleatoriamente dentro del bin
-      fishBody.position.set(
+      fish.position.set(
         (Math.random() - 0.5) * (BIN_W - 200),
         BIN_THK + 50 + Math.random() * 200,
         (Math.random() - 0.5) * (BIN_L - 200)
       );
-      fishBody.rotation.set(
+      fish.rotation.set(
         Math.random() * Math.PI * 2,
         Math.random() * Math.PI * 2,
         Math.random() * Math.PI * 2
       );
-      binGroup.add(fishBody);
+      binGroup.add(fish);
     }
 
     binGroup.position.set(BIN_POS_X, 0, BIN_POS_Z);
