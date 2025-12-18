@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.3.0';
+    const APP_VERSION = 'v2.4.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -362,101 +362,132 @@
       binGroup.add(wire);
     });
 
-    // ===== PESCADOS estilo SketchUp =====
+    // ===== PESCADOS GRANDES 50cm x 10cm =====
     function createRealisticFish(size) {
       const fish = new THREE.Group();
-      const scale = size || 1;
+      const s = size || 1;
       
-      // Estilo SketchUp: gris claro con líneas
-      const fishMat = new THREE.MeshBasicMaterial({ color: 0xc8d0d8, side: THREE.DoubleSide });
-      const fishEdgeMat = new THREE.LineBasicMaterial({ color: 0x445566 });
+      // Dimensiones: 500mm largo, 100mm ancho (50cm x 10cm)
+      const LENGTH = 500 * s;
+      const WIDTH = 100 * s;
       
-      // Cuerpo principal (forma de pez usando LatheGeometry)
+      // Material gris plateado
+      const fishMat = new THREE.MeshStandardMaterial({ 
+        color: 0xb8c4d0, 
+        roughness: 0.4,
+        metalness: 0.2
+      });
+      const finMat = new THREE.MeshStandardMaterial({ 
+        color: 0x8899aa, 
+        roughness: 0.5,
+        side: THREE.DoubleSide
+      });
+      
+      // Cuerpo principal - forma de pez ovalada
       const bodyPoints = [];
-      for (let i = 0; i <= 20; i++) {
-        const t = i / 20;
-        const y = (t - 0.5) * 100 * scale;
+      for (let i = 0; i <= 24; i++) {
+        const t = i / 24;
+        const y = (t - 0.5) * LENGTH;
         let x;
-        if (t < 0.3) {
-          x = Math.sin(t / 0.3 * Math.PI / 2) * 18 * scale;
+        if (t < 0.2) {
+          // Cabeza redondeada
+          x = Math.sin(t / 0.2 * Math.PI / 2) * WIDTH / 2;
         } else if (t < 0.7) {
-          x = (18 - (t - 0.3) * 8) * scale;
+          // Cuerpo grueso
+          x = WIDTH / 2 - (t - 0.2) * 15 * s;
         } else {
-          x = Math.cos((t - 0.7) / 0.3 * Math.PI / 2) * 10 * scale;
+          // Cola estrecha
+          x = Math.cos((t - 0.7) / 0.3 * Math.PI / 2) * WIDTH / 4;
         }
-        bodyPoints.push(new THREE.Vector2(Math.max(x, 1), y));
+        bodyPoints.push(new THREE.Vector2(Math.max(x, 5), y));
       }
-      const bodyGeom = new THREE.LatheGeometry(bodyPoints, 12);
+      const bodyGeom = new THREE.LatheGeometry(bodyPoints, 16);
       bodyGeom.rotateZ(Math.PI / 2);
       const body = new THREE.Mesh(bodyGeom, fishMat);
-      const bodyWire = new THREE.LineSegments(new THREE.EdgesGeometry(bodyGeom, 20), fishEdgeMat);
       fish.add(body);
-      fish.add(bodyWire);
       
-      // Cola (forma de V)
+      // COLA grande y visible (forma de V bifurcada)
+      const tailSize = WIDTH * 0.8;
       const tailShape = new THREE.Shape();
       tailShape.moveTo(0, 0);
-      tailShape.lineTo(-25 * scale, 20 * scale);
-      tailShape.lineTo(-20 * scale, 0);
-      tailShape.lineTo(-25 * scale, -20 * scale);
+      tailShape.lineTo(-tailSize * 0.7, tailSize * 0.6);
+      tailShape.lineTo(-tailSize * 0.4, tailSize * 0.1);
+      tailShape.lineTo(-tailSize * 0.5, 0);
+      tailShape.lineTo(-tailSize * 0.4, -tailSize * 0.1);
+      tailShape.lineTo(-tailSize * 0.7, -tailSize * 0.6);
       tailShape.lineTo(0, 0);
-      const tailGeom = new THREE.ShapeGeometry(tailShape);
-      const tail = new THREE.Mesh(tailGeom, fishMat);
-      tail.position.x = -50 * scale;
-      tail.rotation.y = Math.PI / 2;
-      const tailWire = new THREE.LineSegments(new THREE.EdgesGeometry(tailGeom), fishEdgeMat);
-      tailWire.position.copy(tail.position);
-      tailWire.rotation.copy(tail.rotation);
+      const tailGeom = new THREE.ExtrudeGeometry(tailShape, { depth: 8 * s, bevelEnabled: false });
+      const tail = new THREE.Mesh(tailGeom, finMat);
+      tail.position.set(-LENGTH / 2 - 10 * s, 0, -4 * s);
       fish.add(tail);
-      fish.add(tailWire);
       
-      // Aleta dorsal
+      // Aleta dorsal grande
       const dorsalShape = new THREE.Shape();
       dorsalShape.moveTo(0, 0);
-      dorsalShape.quadraticCurveTo(15 * scale, 25 * scale, 30 * scale, 0);
-      const dorsalGeom = new THREE.ShapeGeometry(dorsalShape);
-      const dorsal = new THREE.Mesh(dorsalGeom, fishMat);
-      dorsal.position.set(5 * scale, 15 * scale, 0);
+      dorsalShape.quadraticCurveTo(LENGTH * 0.15, WIDTH * 0.5, LENGTH * 0.3, 0);
+      const dorsalGeom = new THREE.ExtrudeGeometry(dorsalShape, { depth: 6 * s, bevelEnabled: false });
+      const dorsal = new THREE.Mesh(dorsalGeom, finMat);
+      dorsal.position.set(LENGTH * 0.05, WIDTH / 2 - 10 * s, -3 * s);
       dorsal.rotation.x = Math.PI / 2;
       fish.add(dorsal);
       
-      // Aleta pectoral (ambos lados)
-      const pectoralShape = new THREE.Shape();
-      pectoralShape.moveTo(0, 0);
-      pectoralShape.quadraticCurveTo(10 * scale, 15 * scale, 20 * scale, 5 * scale);
-      pectoralShape.lineTo(0, 0);
-      const pectoralGeom = new THREE.ShapeGeometry(pectoralShape);
-      const pectoral1 = new THREE.Mesh(pectoralGeom, fishMat);
-      pectoral1.position.set(15 * scale, 0, 10 * scale);
-      pectoral1.rotation.set(0, 0, -0.5);
-      fish.add(pectoral1);
-      const pectoral2 = pectoral1.clone();
-      pectoral2.position.z = -10 * scale;
-      pectoral2.rotation.z = 0.5;
-      fish.add(pectoral2);
+      // Aletas pectorales (ambos lados)
+      const pectShape = new THREE.Shape();
+      pectShape.moveTo(0, 0);
+      pectShape.quadraticCurveTo(WIDTH * 0.3, WIDTH * 0.4, WIDTH * 0.5, WIDTH * 0.15);
+      pectShape.lineTo(0, 0);
+      const pectGeom = new THREE.ShapeGeometry(pectShape);
+      const pect1 = new THREE.Mesh(pectGeom, finMat);
+      pect1.position.set(LENGTH * 0.15, 0, WIDTH / 2 - 5 * s);
+      pect1.rotation.set(0.3, 0, -0.4);
+      fish.add(pect1);
+      const pect2 = new THREE.Mesh(pectGeom, finMat);
+      pect2.position.set(LENGTH * 0.15, 0, -WIDTH / 2 + 5 * s);
+      pect2.rotation.set(-0.3, 0, -0.4);
+      pect2.scale.z = -1;
+      fish.add(pect2);
       
-      // Ojos (esferas pequeñas)
-      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
-      const eyeGeom = new THREE.SphereGeometry(3 * scale, 8, 8);
-      const eye1 = new THREE.Mesh(eyeGeom, eyeMat);
-      eye1.position.set(35 * scale, 5 * scale, 8 * scale);
-      fish.add(eye1);
-      const eye2 = eye1.clone();
-      eye2.position.z = -8 * scale;
-      fish.add(eye2);
+      // OJOS grandes y visibles
+      const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      const eyePupilMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+      const eyeSize = WIDTH * 0.12;
+      
+      // Ojo derecho
+      const eyeWhite1 = new THREE.Mesh(new THREE.SphereGeometry(eyeSize, 12, 12), eyeWhiteMat);
+      eyeWhite1.position.set(LENGTH * 0.35, WIDTH * 0.15, WIDTH * 0.35);
+      fish.add(eyeWhite1);
+      const pupil1 = new THREE.Mesh(new THREE.SphereGeometry(eyeSize * 0.5, 8, 8), eyePupilMat);
+      pupil1.position.set(LENGTH * 0.35, WIDTH * 0.18, WIDTH * 0.42);
+      fish.add(pupil1);
+      
+      // Ojo izquierdo
+      const eyeWhite2 = new THREE.Mesh(new THREE.SphereGeometry(eyeSize, 12, 12), eyeWhiteMat);
+      eyeWhite2.position.set(LENGTH * 0.35, WIDTH * 0.15, -WIDTH * 0.35);
+      fish.add(eyeWhite2);
+      const pupil2 = new THREE.Mesh(new THREE.SphereGeometry(eyeSize * 0.5, 8, 8), eyePupilMat);
+      pupil2.position.set(LENGTH * 0.35, WIDTH * 0.18, -WIDTH * 0.42);
+      fish.add(pupil2);
+      
+      // Boca (línea oscura)
+      const mouthGeom = new THREE.TorusGeometry(WIDTH * 0.15, 3 * s, 8, 8, Math.PI);
+      const mouthMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+      const mouth = new THREE.Mesh(mouthGeom, mouthMat);
+      mouth.position.set(LENGTH * 0.45, -WIDTH * 0.05, 0);
+      mouth.rotation.set(Math.PI / 2, 0, Math.PI);
+      fish.add(mouth);
       
       return fish;
     }
     
-    // Crear 30 pescados realistas
-    for (let i = 0; i < 30; i++) {
-      const fishSize = 0.6 + Math.random() * 0.5;
+    // Crear 20 pescados grandes (50cm)
+    for (let i = 0; i < 20; i++) {
+      const fishSize = 0.8 + Math.random() * 0.3;
       const fish = createRealisticFish(fishSize);
       
       fish.position.set(
-        (Math.random() - 0.5) * (BIN_W - 250),
-        BIN_THK + 30 + Math.random() * 180,
-        (Math.random() - 0.5) * (BIN_L - 250)
+        (Math.random() - 0.5) * (BIN_W - 400),
+        BIN_THK + 80 + Math.random() * 250,
+        (Math.random() - 0.5) * (BIN_L - 400)
       );
       fish.rotation.set(
         (Math.random() - 0.5) * 0.8,
@@ -553,44 +584,44 @@
       document.getElementById('btn-toggle-walls').textContent = wallsVisible ? 'Ocultar paneles' : 'Mostrar paneles';
     });
 
-    // ===== AVATARES estilo SketchUp =====
+    // ===== AVATARES estilo Maniquí suave =====
     function createAvatar(colorTint, name) {
       const avatar = new THREE.Group();
       avatar.name = name;
       
-      // Estilo SketchUp: gris con líneas negras
-      const avatarMat = new THREE.MeshBasicMaterial({ color: 0xd0d0d0, side: THREE.DoubleSide });
-      const avatarEdgeMat = new THREE.LineBasicMaterial({ color: 0x333333 });
-      const helmetMat = new THREE.MeshBasicMaterial({ color: 0xf5c542, side: THREE.DoubleSide }); // Amarillo casco
-      
-      function addWithWireframe(geom, mat, pos, rot, parent) {
-        const mesh = new THREE.Mesh(geom, mat);
-        if (pos) mesh.position.copy(pos);
-        if (rot) mesh.rotation.copy(rot);
-        parent.add(mesh);
-        const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geom, 15), avatarEdgeMat);
-        if (pos) wire.position.copy(pos);
-        if (rot) wire.rotation.copy(rot);
-        parent.add(wire);
-        return mesh;
-      }
-      
-      // Cabeza
-      const headGeom = new THREE.SphereGeometry(85, 16, 16);
-      addWithWireframe(headGeom, avatarMat, new THREE.Vector3(0, 1620, 0), null, avatar);
-      
-      // Ojos (puntos negros)
-      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
-      const eyeGeom = new THREE.SphereGeometry(10, 8, 8);
-      [-30, 30].forEach(x => {
-        const eye = new THREE.Mesh(eyeGeom, eyeMat);
-        eye.position.set(x, 1640, 75);
-        avatar.add(eye);
+      // Material suave tipo maniquí (sin wireframe)
+      const avatarMat = new THREE.MeshStandardMaterial({ 
+        color: 0xf5f5f5, 
+        roughness: 0.6,
+        metalness: 0.0
       });
       
-      // Cuerpo/Torso
-      const torsoGeom = new THREE.CylinderGeometry(90, 110, 450, 12);
-      addWithWireframe(torsoGeom, avatarMat, new THREE.Vector3(0, 1280, 0), null, avatar);
+      // Cabeza ovalada
+      const headGeom = new THREE.SphereGeometry(90, 24, 24);
+      const head = new THREE.Mesh(headGeom, avatarMat);
+      head.scale.set(0.85, 1.1, 0.9);
+      head.position.y = 1650;
+      avatar.add(head);
+      
+      // Cuello
+      const neckGeom = new THREE.CylinderGeometry(40, 50, 80, 16);
+      const neck = new THREE.Mesh(neckGeom, avatarMat);
+      neck.position.y = 1520;
+      avatar.add(neck);
+      
+      // Torso (forma más orgánica)
+      const torsoGeom = new THREE.CylinderGeometry(85, 95, 400, 20);
+      const torso = new THREE.Mesh(torsoGeom, avatarMat);
+      torso.position.y = 1280;
+      avatar.add(torso);
+      
+      // Caderas
+      const hipsGeom = new THREE.SphereGeometry(100, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+      const hips = new THREE.Mesh(hipsGeom, avatarMat);
+      hips.scale.set(1, 0.5, 0.8);
+      hips.position.y = 1050;
+      hips.rotation.x = Math.PI;
+      avatar.add(hips);
       
       // Brazos articulados para animación
       avatar.leftArm = new THREE.Group();
@@ -598,47 +629,100 @@
       avatar.leftForearm = new THREE.Group();
       avatar.rightForearm = new THREE.Group();
       
-      const upperArmGeom = new THREE.CylinderGeometry(35, 30, 250, 8);
-      const forearmGeom = new THREE.CylinderGeometry(30, 26, 220, 8);
-      const handGeom = new THREE.SphereGeometry(32, 8, 8);
+      // Hombros redondeados
+      const shoulderGeom = new THREE.SphereGeometry(45, 12, 12);
+      const leftShoulder = new THREE.Mesh(shoulderGeom, avatarMat);
+      leftShoulder.position.set(-120, 1450, 0);
+      avatar.add(leftShoulder);
+      const rightShoulder = new THREE.Mesh(shoulderGeom, avatarMat);
+      rightShoulder.position.set(120, 1450, 0);
+      avatar.add(rightShoulder);
+      
+      // Brazo superior (cápsula suave)
+      const upperArmGeom = new THREE.CapsuleGeometry(28, 180, 8, 16);
+      const forearmGeom = new THREE.CapsuleGeometry(24, 160, 8, 16);
+      const handGeom = new THREE.SphereGeometry(30, 12, 12);
       
       // Brazo izquierdo
-      addWithWireframe(upperArmGeom, avatarMat, new THREE.Vector3(0, -125, 0), null, avatar.leftArm);
-      addWithWireframe(forearmGeom, avatarMat, new THREE.Vector3(0, -110, 0), null, avatar.leftForearm);
-      addWithWireframe(handGeom, avatarMat, new THREE.Vector3(0, -240, 0), null, avatar.leftForearm);
-      avatar.leftForearm.position.y = -250;
+      const leftUpper = new THREE.Mesh(upperArmGeom, avatarMat);
+      leftUpper.position.y = -100;
+      avatar.leftArm.add(leftUpper);
+      
+      const leftElbow = new THREE.Mesh(new THREE.SphereGeometry(28, 10, 10), avatarMat);
+      leftElbow.position.y = -200;
+      avatar.leftArm.add(leftElbow);
+      
+      const leftFore = new THREE.Mesh(forearmGeom, avatarMat);
+      leftFore.position.y = -90;
+      avatar.leftForearm.add(leftFore);
+      const leftHand = new THREE.Mesh(handGeom, avatarMat);
+      leftHand.position.y = -190;
+      avatar.leftForearm.add(leftHand);
+      avatar.leftForearm.position.y = -200;
       avatar.leftArm.add(avatar.leftForearm);
-      avatar.leftArm.position.set(-140, 1450, 0);
+      avatar.leftArm.position.set(-120, 1450, 0);
       avatar.add(avatar.leftArm);
       
       // Brazo derecho
-      addWithWireframe(upperArmGeom, avatarMat, new THREE.Vector3(0, -125, 0), null, avatar.rightArm);
-      addWithWireframe(forearmGeom, avatarMat, new THREE.Vector3(0, -110, 0), null, avatar.rightForearm);
-      addWithWireframe(handGeom, avatarMat, new THREE.Vector3(0, -240, 0), null, avatar.rightForearm);
-      avatar.rightForearm.position.y = -250;
+      const rightUpper = new THREE.Mesh(upperArmGeom, avatarMat);
+      rightUpper.position.y = -100;
+      avatar.rightArm.add(rightUpper);
+      
+      const rightElbow = new THREE.Mesh(new THREE.SphereGeometry(28, 10, 10), avatarMat);
+      rightElbow.position.y = -200;
+      avatar.rightArm.add(rightElbow);
+      
+      const rightFore = new THREE.Mesh(forearmGeom, avatarMat);
+      rightFore.position.y = -90;
+      avatar.rightForearm.add(rightFore);
+      const rightHand = new THREE.Mesh(handGeom, avatarMat);
+      rightHand.position.y = -190;
+      avatar.rightForearm.add(rightHand);
+      avatar.rightForearm.position.y = -200;
       avatar.rightArm.add(avatar.rightForearm);
-      avatar.rightArm.position.set(140, 1450, 0);
+      avatar.rightArm.position.set(120, 1450, 0);
       avatar.add(avatar.rightArm);
       
-      // Piernas
-      const legGeom = new THREE.CylinderGeometry(50, 45, 550, 8);
-      addWithWireframe(legGeom, avatarMat, new THREE.Vector3(-60, 755, 0), null, avatar);
-      addWithWireframe(legGeom, avatarMat, new THREE.Vector3(60, 755, 0), null, avatar);
+      // Piernas (forma orgánica)
+      const thighGeom = new THREE.CapsuleGeometry(45, 280, 8, 16);
+      const calfGeom = new THREE.CapsuleGeometry(38, 260, 8, 16);
       
-      // Pies
-      const footGeom = new THREE.BoxGeometry(100, 80, 180);
-      addWithWireframe(footGeom, avatarMat, new THREE.Vector3(-60, 440, 30), null, avatar);
-      addWithWireframe(footGeom, avatarMat, new THREE.Vector3(60, 440, 30), null, avatar);
+      // Pierna izquierda
+      const leftThigh = new THREE.Mesh(thighGeom, avatarMat);
+      leftThigh.position.set(-55, 850, 0);
+      avatar.add(leftThigh);
+      const leftKnee = new THREE.Mesh(new THREE.SphereGeometry(40, 10, 10), avatarMat);
+      leftKnee.position.set(-55, 680, 0);
+      avatar.add(leftKnee);
+      const leftCalf = new THREE.Mesh(calfGeom, avatarMat);
+      leftCalf.position.set(-55, 510, 0);
+      avatar.add(leftCalf);
       
-      // Casco de seguridad (amarillo)
-      const helmetGeom = new THREE.SphereGeometry(100, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-      addWithWireframe(helmetGeom, helmetMat, new THREE.Vector3(0, 1700, 0), null, avatar);
-      const brimGeom = new THREE.CylinderGeometry(105, 110, 15, 16);
-      addWithWireframe(brimGeom, helmetMat, new THREE.Vector3(0, 1695, 0), null, avatar);
+      // Pierna derecha
+      const rightThigh = new THREE.Mesh(thighGeom, avatarMat);
+      rightThigh.position.set(55, 850, 0);
+      avatar.add(rightThigh);
+      const rightKnee = new THREE.Mesh(new THREE.SphereGeometry(40, 10, 10), avatarMat);
+      rightKnee.position.set(55, 680, 0);
+      avatar.add(rightKnee);
+      const rightCalf = new THREE.Mesh(calfGeom, avatarMat);
+      rightCalf.position.set(55, 510, 0);
+      avatar.add(rightCalf);
       
-      // Pescado que sostiene
-      avatar.heldFish = createRealisticFish(0.9);
-      avatar.heldFish.position.set(0, -480, -100);
+      // Pies redondeados
+      const footGeom = new THREE.CapsuleGeometry(35, 80, 8, 12);
+      const leftFoot = new THREE.Mesh(footGeom, avatarMat);
+      leftFoot.rotation.x = Math.PI / 2;
+      leftFoot.position.set(-55, 340, 30);
+      avatar.add(leftFoot);
+      const rightFoot = new THREE.Mesh(footGeom, avatarMat);
+      rightFoot.rotation.x = Math.PI / 2;
+      rightFoot.position.set(55, 340, 30);
+      avatar.add(rightFoot);
+      
+      // Pescado que sostiene (más grande)
+      avatar.heldFish = createRealisticFish(0.7);
+      avatar.heldFish.position.set(0, -380, -120);
       avatar.heldFish.rotation.set(0, Math.PI/2, 0);
       avatar.heldFish.visible = true;
       avatar.rightArm.add(avatar.heldFish);
@@ -647,24 +731,24 @@
     }
     
     // Crear 2 avatares trabajadores
-    const avatar1 = createAvatar(0xcccccc, 'Trabajador1');
-    const avatar2 = createAvatar(0xcccccc, 'Trabajador2');
+    const avatar1 = createAvatar(0xf5f5f5, 'Trabajador1');
+    const avatar2 = createAvatar(0xf5f5f5, 'Trabajador2');
     
-    // Avatar original ~1700mm, escalar a 2300mm (230cm = 180 + 50)
+    // Avatar original ~1700mm, escalar a 2300mm (230cm)
     const avatarScale = 2300 / 1700;
     avatar1.scale.set(avatarScale, avatarScale, avatarScale);
     avatar2.scale.set(avatarScale, avatarScale, avatarScale);
     
     // Posicionar detrás de pared 4, en el piso
-    // Con escala 2300/1700 = 1.35, pies en y=440, base = 440*1.35 - 40*1.35 = 540
-    // Para que pisen y=0: avatarY = -540
-    const avatarY = -540;
+    // Pies en y=340, con escala 1.35 -> 340*1.35 = 459
+    // Para que pisen y=0: avatarY = -459
+    const avatarY = -460;
     
-    avatar1.position.set(h1x, avatarY, ROOM_L/2 + 450);
+    avatar1.position.set(h1x, avatarY, ROOM_L/2 + 500);
     avatar1.rotation.y = Math.PI;
     scene.add(avatar1);
     
-    avatar2.position.set(h2x, avatarY, ROOM_L/2 + 450);
+    avatar2.position.set(h2x, avatarY, ROOM_L/2 + 500);
     avatar2.rotation.y = Math.PI;
     scene.add(avatar2);
     
