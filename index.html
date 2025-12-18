@@ -40,7 +40,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
     <button class="btn" id="btn-guillotina">Abrir guillotina</button>
-    <div class="badge" id="version-badge">v2.6.7</div>
+    <div class="badge" id="version-badge">v2.6.8</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="bin-fill">Bin: 0</div>
@@ -343,6 +343,16 @@
     });
 
     // ===== PESCADOS estilo COMIC =====
+    // Colores mate para pescados (celeste, naranjo, amarillo)
+    const FISH_COLORS = [
+      { body: 0xc5d5e5, fin: 0x9ab5c8, line: 0x5a6a7a },  // Celeste claro
+      { body: 0xb8d4e8, fin: 0x8fc0d9, line: 0x4a7a8a },  // Celeste más claro
+      { body: 0xe8c5a5, fin: 0xd4a882, line: 0x8a6a5a },  // Naranjo claro mate
+      { body: 0xf0d5b0, fin: 0xe0b890, line: 0x9a7a60 },  // Naranjo pálido mate
+      { body: 0xe8e0b5, fin: 0xd8c890, line: 0x8a8060 },  // Amarillo mate
+      { body: 0xf0e8c0, fin: 0xe0d0a0, line: 0x9a9070 },  // Amarillo pálido mate
+    ];
+    
     function createRealisticFish(size) {
       const fish = new THREE.Group();
       const s = size || 1;
@@ -351,10 +361,11 @@
       const LENGTH = 500 * s;
       const WIDTH = 100 * s;
       
-      // Material estilo comic - gris azulado pastel mate
-      const fishMat = new THREE.MeshBasicMaterial({ color: 0xc5d5e5 });
-      const finMat = new THREE.MeshBasicMaterial({ color: 0x9ab5c8, side: THREE.DoubleSide });
-      const fishLineMat = new THREE.LineBasicMaterial({ color: 0x5a6a7a });
+      // Material estilo comic - color aleatorio entre las opciones
+      const colorSet = FISH_COLORS[Math.floor(Math.random() * FISH_COLORS.length)];
+      const fishMat = new THREE.MeshBasicMaterial({ color: colorSet.body });
+      const finMat = new THREE.MeshBasicMaterial({ color: colorSet.fin, side: THREE.DoubleSide });
+      const fishLineMat = new THREE.LineBasicMaterial({ color: colorSet.line });
       
       // Cuerpo principal - forma de pez ovalada
       const bodyPoints = [];
