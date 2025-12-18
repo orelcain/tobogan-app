@@ -202,8 +202,8 @@
     scene.add(floorWire);
 
     const wallGroup = new THREE.Group();
-    // Paredes - blanco crema mate
-    const wallMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e8 });
+    // Paredes - gris muy claro mate (más claro que suelo)
+    const wallMat = new THREE.MeshBasicMaterial({ color: 0xe5e2dd });
     const halfW = ROOM_W / 2 - WALL_THK / 2, halfL = ROOM_L / 2 - WALL_THK / 2, wallH = ROOM_H - 100;
     
     const PANEL_WIDTH = 1000;
@@ -870,7 +870,13 @@
         lastSpawn2 = Math.floor((animTime + CYCLE_DURATION/2) / CYCLE_DURATION);
       }
       
-      // Física de pescados cayendo
+      // Física de pescados cayendo con colisión del bin
+      const binMinX = BIN_POS_X - BIN_W/2 + 50;
+      const binMaxX = BIN_POS_X + BIN_W/2 - 50;
+      const binMinZ = BIN_POS_Z - BIN_L/2 + 50;
+      const binMaxZ = BIN_POS_Z + BIN_L/2 - 50;
+      const binFloorY = 50;
+      
       for (let i = fallingFish.length - 1; i >= 0; i--) {
         const fish = fallingFish[i];
         
@@ -882,13 +888,45 @@
         fish.position.y += fish.userData.vy;
         fish.position.z += fish.userData.vz;
         
+        // Colisión con paredes del bin
+        if (fish.position.y < BIN_H && fish.position.y > binFloorY) {
+          // Pared izquierda/derecha del bin
+          if (fish.position.x < binMinX) {
+            fish.position.x = binMinX;
+            fish.userData.vx *= -0.5;
+          } else if (fish.position.x > binMaxX) {
+            fish.position.x = binMaxX;
+            fish.userData.vx *= -0.5;
+          }
+          // Pared frontal/trasera del bin
+          if (fish.position.z < binMinZ) {
+            fish.position.z = binMinZ;
+            fish.userData.vz *= -0.5;
+          } else if (fish.position.z > binMaxZ) {
+            fish.position.z = binMaxZ;
+            fish.userData.vz *= -0.5;
+          }
+        }
+        
+        // Colisión con fondo del bin
+        if (fish.position.y < binFloorY) {
+          fish.position.y = binFloorY;
+          fish.userData.vy *= -0.3; // Rebote suave
+          fish.userData.vx *= 0.8; // Fricción
+          fish.userData.vz *= 0.8;
+          // Reducir rotación al tocar fondo
+          fish.userData.rotSpeed.x *= 0.9;
+          fish.userData.rotSpeed.y *= 0.9;
+          fish.userData.rotSpeed.z *= 0.9;
+        }
+        
         // Rotar naturalmente
         fish.rotation.x += fish.userData.rotSpeed.x;
         fish.rotation.y += fish.userData.rotSpeed.y;
         fish.rotation.z += fish.userData.rotSpeed.z;
         
-        // Remover cuando llegue al nivel del bin
-        if (fish.position.y < 200) {
+        // Remover pescados muy viejos o fuera del bin
+        if (fish.position.y < -100 || fish.position.z < -500) {
           scene.remove(fish);
           fallingFish.splice(i, 1);
         }
