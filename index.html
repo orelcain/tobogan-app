@@ -26,8 +26,8 @@
       .btn:not(.btn-icon) { flex: 1; font-size: 14px; }
       .badge { order: 2; }
       #btn-refresh { order: 3; }
-      #view-panel { bottom: 80px; }
-      .btn-view { min-width: 40px; min-height: 40px; padding: 8px 12px; font-size: 14px; }
+      #view-panel { bottom: 60px; gap: 6px; }
+      .btn-view { min-width: auto; min-height: 36px; padding: 8px 12px; font-size: 12px; }
     }
     .badge { padding: 8px 12px; border-radius: 6px; background: #0f172a; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 6px 18px rgba(0,0,0,0.35); font-size: 13px; }
   </style>
@@ -35,13 +35,13 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v0.9.3</div>
+    <div class="badge" id="version-badge">v0.9.4</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
-    <button class="btn-view" data-view="A">A</button>
-    <button class="btn-view" data-view="B">B</button>
-    <button class="btn-view" data-view="C">C</button>
+    <button class="btn-view" data-view="A">Vista A</button>
+    <button class="btn-view" data-view="B">Vista B</button>
+    <button class="btn-view" data-view="C">Vista C</button>
   </div>
   <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
   <script type="importmap">
@@ -57,7 +57,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v0.9.3';
+    const APP_VERSION = 'v0.9.4';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
