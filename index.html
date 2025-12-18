@@ -17,11 +17,17 @@
     .btn:hover { background: #1d4ed8; }
     .btn:active { background: #1e3a8a; transform: scale(0.98); }
     .badge { padding: 8px 12px; border-radius: 6px; background: #0f172a; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 6px 18px rgba(0,0,0,0.35); font-size: 13px; margin-right: auto; }
+    #view-panel { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 8px; }
+    .btn-view { padding: 10px 16px; border: none; border-radius: 6px; background: #1e40af; color: #e2e8f0; font-weight: 700; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.35); min-width: 44px; min-height: 44px; font-size: 16px; touch-action: manipulation; }
+    .btn-view:hover { background: #1d4ed8; }
+    .btn-view:active { background: #1e3a8a; transform: scale(0.95); }
     @media (max-width: 768px) {
       #ui-panel { flex-wrap: wrap; }
       .btn:not(.btn-icon) { flex: 1; font-size: 14px; }
       .badge { order: 2; }
       #btn-refresh { order: 3; }
+      #view-panel { bottom: 80px; }
+      .btn-view { min-width: 40px; min-height: 40px; padding: 8px 12px; font-size: 14px; }
     }
     .badge { padding: 8px 12px; border-radius: 6px; background: #0f172a; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 6px 18px rgba(0,0,0,0.35); font-size: 13px; }
   </style>
@@ -29,8 +35,16 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v0.8.7</div>
+    <div class="badge" id="version-badge">v0.9.0</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
+  </div>
+  <div id="view-panel">
+    <button class="btn-view" data-view="1">1</button>
+    <button class="btn-view" data-view="2">2</button>
+    <button class="btn-view" data-view="3">3</button>
+    <button class="btn-view" data-view="4">4</button>
+    <button class="btn-view" data-view="5">5</button>
+    <button class="btn-view" data-view="6">6</button>
   </div>
   <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
   <script type="importmap">
@@ -46,7 +60,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v0.8.7';
+    const APP_VERSION = 'v0.9.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -228,10 +242,36 @@
     binGroup.renderOrder = 1;
     scene.add(binGroup);
 
-    // Vista inicial: desde 6 metros de altura como un árbol, viendo toda la sala
+    // Vista inicial: desde árbol a 6 metros
     camera.position.set(0, 6000, 3000);
     controls.target.set(0, 0, 0);
     controls.update();
+
+    // 6 vistas predefinidas para elegir
+    const cameraViews = {
+      1: { pos: [0, 6000, 3000], target: [0, 0, 0], desc: 'Superior frontal 6m' },
+      2: { pos: [0, 5000, 4000], target: [0, 0, 0], desc: 'Superior frontal 5m' },
+      3: { pos: [-3000, 5000, 3000], target: [0, 0, 0], desc: 'Isométrica izquierda' },
+      4: { pos: [3000, 5000, 3000], target: [0, 0, 0], desc: 'Isométrica derecha' },
+      5: { pos: [0, 4500, 5000], target: [0, 500, 0], desc: 'Frontal elevada' },
+      6: { pos: [4000, 4000, 4000], target: [0, 1000, 0], desc: 'Diagonal clásica' }
+    };
+
+    function setView(viewNum) {
+      const view = cameraViews[viewNum];
+      if (!view) return;
+      camera.position.set(...view.pos);
+      controls.target.set(...view.target);
+      controls.update();
+      console.log(`Vista ${viewNum}: ${view.desc}`);
+    }
+
+    // Event listeners para botones de vistas
+    document.querySelectorAll('.btn-view').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setView(btn.dataset.view);
+      });
+    });
 
     let wallsVisible = true;
     document.getElementById('btn-toggle-walls').addEventListener('click', () => {
