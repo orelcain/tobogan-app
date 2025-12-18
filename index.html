@@ -498,13 +498,14 @@
           // Log para ver estructura del modelo
           console.log('Mesh encontrado:', child.name, 'posición:', child.position);
           
-          // Buscar guillotina por nombre (varios posibles nombres)
-          const name = child.name.toLowerCase();
-          if (name.includes('guillotina') || name.includes('gate') || name.includes('compuerta') || name.includes('door') || name.includes('puerta')) {
+          // Buscar guillotina: es el mesh plano (Mesh1 con z=2)
+          if (child.name === 'Mesh1') {
             console.log('🎯 GUILLOTINA ENCONTRADA:', child.name);
             guillotinas.push(child);
-            // Darle un color diferente para identificarla
-            child.material = new THREE.MeshBasicMaterial({ color: 0xff6666 });
+            // Guardar posición original
+            child.userData.originalY = child.position.y;
+            // Darle color diferente para verla
+            child.material = new THREE.MeshBasicMaterial({ color: 0xaabbcc });
           } else {
             child.material = comicToboganMat;
           }
@@ -518,36 +519,21 @@
         }
       });
       
-      // Si no encontró por nombre, intentar con el primer mesh pequeño (puede ser la guillotina)
-      if (guillotinas.length === 0) {
-        console.log('No se encontró guillotina por nombre, intentando por tamaño...');
-        object.traverse((child) => {
-          if (child.isMesh && guillotinas.length < 1) {
-            // El mesh más pequeño probablemente es la guillotina
-            child.geometry.computeBoundingBox();
-            const size = new THREE.Vector3();
-            child.geometry.boundingBox.getSize(size);
-            console.log('Mesh:', child.name, 'tamaño:', size);
-          }
-        });
-      }
-      
       scene.add(object);
       
       // Duplicar tobogán para el segundo (tobogán izquierdo)
       const tobogan2 = object.clone();
       tobogan2.position.set(950, 900, 1340);
-      scene.add(tobogan2);
       
       // Buscar guillotina en el clon también
       tobogan2.traverse((child) => {
-        if (child.isMesh) {
-          const name = child.name.toLowerCase();
-          if (name.includes('guillotina') || name.includes('gate') || name.includes('compuerta') || name.includes('door') || name.includes('puerta')) {
-            guillotinas.push(child);
-          }
+        if (child.isMesh && child.name === 'Mesh1') {
+          guillotinas.push(child);
+          child.userData.originalY = child.position.y;
         }
       });
+      
+      scene.add(tobogan2);
       
       console.log('Toboganes cargados. Guillotinas encontradas:', guillotinas.length);
     }, 
@@ -848,9 +834,11 @@
       
       // Animar guillotinas (subir y bajar)
       if (guillotinas.length > 0) {
-        const guillotinaOffset = Math.sin(animTime * 2) * 100; // Sube y baja 100 unidades
+        const guillotinaOffset = Math.sin(animTime * 2) * 150; // Sube y baja 150 unidades
         guillotinas.forEach(g => {
-          g.position.y = guillotinaOffset;
+          if (g.userData.originalY !== undefined) {
+            g.position.y = g.userData.originalY + guillotinaOffset;
+          }
         });
       }
       
