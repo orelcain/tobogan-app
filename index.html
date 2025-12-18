@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v1.3.1</div>
+    <div class="badge" id="version-badge">v1.3.2</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.3.1';
+    const APP_VERSION = 'v1.3.2';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -119,8 +119,8 @@
 
     const ROOM_W = 4000, ROOM_L = 4000, ROOM_H = 4000, WALL_THK = 115;
     const BIN_W = 1200, BIN_L = 1000, BIN_H = 900, BIN_THK = 35;
-    const BIN_POS_X = ROOM_W/2 - WALL_THK - BIN_W/2 - 100 - 300; // Movido 30cm hacia pared 1
-    const BIN_POS_Z = ROOM_L/2 - WALL_THK - BIN_L/2 - 700;
+    const BIN_POS_X = ROOM_W/2 - WALL_THK - BIN_W/2 - 100 - 300 + 200; // Movido hacia pared 2
+    const BIN_POS_Z = ROOM_L/2 - WALL_THK - BIN_L/2 - 700 + 90; // Movido hacia pared 4
 
     // Piso de concreto con 50cm de profundidad
     const FLOOR_DEPTH = 500;
@@ -335,7 +335,7 @@
       
       // Posicionar: parte delantera a altura del bin, parte trasera en pared 4
       // Tobogán derecho (cerca pared 2)
-      object.position.set(1400, 900, 1200);
+      object.position.set(1600, 900, 1290);
       
       // Aplicar material acero inoxidable a todos los meshes
       const stainlessSteelMat = new THREE.MeshStandardMaterial({
@@ -356,7 +356,7 @@
       
       // Duplicar tobogán para el segundo (tobogán izquierdo)
       const tobogan2 = object.clone();
-      tobogan2.position.set(700, 900, 1200);
+      tobogan2.position.set(900, 900, 1290);
       scene.add(tobogan2);
       
       console.log('Toboganes cargados exitosamente');
