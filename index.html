@@ -40,7 +40,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
     <button class="btn" id="btn-guillotina">Abrir guillotina</button>
-    <div class="badge" id="version-badge">v2.5.0</div>
+    <div class="badge" id="version-badge">v2.6.0</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="bin-fill">🐟 Bin: 0%</div>
@@ -64,7 +64,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.5.0';
+    const APP_VERSION = 'v2.6.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -883,17 +883,18 @@
       const binFloorY = 50;
       
       // Parámetros del tobogán (aproximado como rampa inclinada)
-      // Tobogán 1: x=1550, Tobogán 2: x=950, ambos z de ~1340 a ~800
-      const toboganWidth = 300; // Ancho del canal
-      const toboganZStart = 1800; // Cerca de pared 4
-      const toboganZEnd = 600; // Donde termina sobre el bin
-      const toboganYStart = 1400; // Altura en pared
-      const toboganYEnd = 700; // Altura sobre bin
+      // Toboganes en posiciones de huecos: h1x=700, h2x=1300
+      // Posición física de toboganes 3D: x=1550 y x=950, z desde pared (~2000) hasta bin (~800)
+      const toboganWidth = 400; // Ancho del canal aumentado
+      const toboganZStart = ROOM_L/2; // Pared 4 (z=2000)
+      const toboganZEnd = BIN_POS_Z; // Donde termina sobre el bin
+      const toboganYStart = TOBOGAN_HOLE_Y; // Altura en pared (1475)
+      const toboganYEnd = BIN_H + 100; // Altura sobre bin (~1000)
       
       // Altura de guillotina actual (0 = cerrada, 200 = abierta)
       const guillotinaAltura = guillotinaTarget;
-      const guillotinaY = 1400; // Posición Y de la guillotina
-      const guillotinaZone = 1750; // Zona Z donde está la guillotina
+      const guillotinaY = TOBOGAN_HOLE_Y; // Posición Y de la guillotina
+      const guillotinaZone = ROOM_L/2 - 100; // Justo dentro de pared 4
       
       for (let i = fallingFish.length - 1; i >= 0; i--) {
         const fish = fallingFish[i];
@@ -909,17 +910,19 @@
         // ===== COLISIÓN CON GUILLOTINA =====
         // Si está cerrada o parcialmente cerrada, bloquea pescados
         if (guillotinaAltura < 150) {
-          // Para ambos toboganes (x=1550 y x=950)
+          // Para ambos toboganes usando posiciones de huecos
           [h1x, h2x].forEach(toboX => {
             const inXRange = Math.abs(fish.position.x - toboX) < toboganWidth/2;
-            const inZRange = fish.position.z > guillotinaZone - 50 && fish.position.z < guillotinaZone + 50;
-            const inYRange = fish.position.y < guillotinaY + guillotinaAltura && fish.position.y > guillotinaY - 200;
+            const inZRange = fish.position.z > guillotinaZone - 80 && fish.position.z < guillotinaZone + 80;
+            const inYRange = fish.position.y < guillotinaY + guillotinaAltura + 100 && fish.position.y > guillotinaY - 300;
             
             if (inXRange && inZRange && inYRange) {
-              // Bloquear - empujar hacia atrás
-              fish.position.z = guillotinaZone + 60;
-              fish.userData.vz *= -0.3;
-              fish.userData.vy *= 0.5;
+              // Bloquear - empujar hacia atrás (hacia fuera de la sala)
+              fish.position.z = guillotinaZone + 100;
+              fish.userData.vz = Math.abs(fish.userData.vz) * 0.5; // Rebote hacia atrás
+              fish.userData.vy *= 0.3;
+              // Pequeño movimiento lateral para que no se queden atascados
+              fish.userData.vx += (Math.random() - 0.5) * 5;
             }
           });
         }
