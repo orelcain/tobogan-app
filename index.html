@@ -1015,14 +1015,16 @@
         }
       }
       
-      // Calcular % de llenado del bin basado en altura máxima de pescados
+      // Calcular % de llenado del bin basado en altura de pescados asentados
       const fishInBin = fallingFish.filter(f => 
         f.position.y > 0 &&
+        f.position.y < BIN_H + 300 && // Solo pescados dentro o cerca del bin (no cayendo desde arriba)
+        Math.abs(f.userData.vy) < 5 && // Velocidad baja = asentados
         f.position.x > BIN_POS_X - BIN_W/2 - 50 && f.position.x < BIN_POS_X + BIN_W/2 + 50 &&
         f.position.z > BIN_POS_Z - BIN_L/2 - 50 && f.position.z < BIN_POS_Z + BIN_L/2 + 50
       );
       
-      // Altura máxima de pescados en el bin
+      // Altura máxima de pescados ASENTADOS en el bin
       const maxFishHeight = fishInBin.length > 0 ? Math.max(...fishInBin.map(f => f.position.y)) : 0;
       // El bin tiene altura BIN_H (900), llenado = altura pescados / altura bin
       const fillPercent = Math.min(Math.round((maxFishHeight / BIN_H) * 100), 150);
