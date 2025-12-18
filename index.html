@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.3.2';
+    const APP_VERSION = 'v1.3.3';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -335,7 +335,7 @@
       
       // Posicionar: parte delantera a altura del bin, parte trasera en pared 4
       // Tobogán derecho (cerca pared 2)
-      object.position.set(1600, 900, 1290);
+      object.position.set(1550, 900, 1290);
       
       // Aplicar material acero inoxidable a todos los meshes
       const stainlessSteelMat = new THREE.MeshStandardMaterial({
@@ -356,7 +356,7 @@
       
       // Duplicar tobogán para el segundo (tobogán izquierdo)
       const tobogan2 = object.clone();
-      tobogan2.position.set(900, 900, 1290);
+      tobogan2.position.set(950, 900, 1290);
       scene.add(tobogan2);
       
       console.log('Toboganes cargados exitosamente');
