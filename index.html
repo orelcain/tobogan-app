@@ -972,29 +972,35 @@
           }
         }
         
-        // Colisión con fondo del bin - apilar pescados
-        // Calcular altura de apilado basado en pescados ya en el bin
-        const fishBelow = fallingFish.filter(f => 
-          f !== fish &&
-          Math.abs(f.position.x - fish.position.x) < 80 &&
-          Math.abs(f.position.z - fish.position.z) < 80 &&
-          f.position.y < fish.position.y &&
-          f.position.y > binFloorY - 10
-        ).length;
-        const stackHeight = binFloorY + fishBelow * 40; // Cada pescado agrega 40mm de altura
+        // Colisión con fondo del bin - apilar pescados de forma compacta
+        // Dividir bin en celdas para apilar mejor
+        const cellSize = 120; // Tamaño de celda
+        const fishCellX = Math.floor((fish.position.x - (BIN_POS_X - BIN_W/2)) / cellSize);
+        const fishCellZ = Math.floor((fish.position.z - (BIN_POS_Z - BIN_L/2)) / cellSize);
         
-        if (fish.position.y < stackHeight + 20) {
-          fish.position.y = stackHeight + 20 + Math.random() * 10;
-          fish.userData.vy *= -0.2; // Rebote mís suave
-          fish.userData.vx *= 0.7; // Fricción
-          fish.userData.vz *= 0.7;
-          // Añadir pequeño movimiento lateral aleatorio para que se acomoden
-          fish.userData.vx += (Math.random() - 0.5) * 2;
-          fish.userData.vz += (Math.random() - 0.5) * 2;
-          // Reducir rotación al tocar fondo
-          fish.userData.rotSpeed.x *= 0.8;
-          fish.userData.rotSpeed.y *= 0.8;
-          fish.userData.rotSpeed.z *= 0.8;
+        // Contar pescados en la misma celda debajo de este
+        const fishInSameCell = fallingFish.filter(f => 
+          f !== fish &&
+          Math.floor((f.position.x - (BIN_POS_X - BIN_W/2)) / cellSize) === fishCellX &&
+          Math.floor((f.position.z - (BIN_POS_Z - BIN_L/2)) / cellSize) === fishCellZ &&
+          f.position.y < fish.position.y + 50
+        ).length;
+        
+        // Cada pescado en la celda agrega 60mm de altura (se apilan más rápido)
+        const stackHeight = binFloorY + fishInSameCell * 60;
+        
+        if (fish.position.y < stackHeight + 30) {
+          fish.position.y = stackHeight + 30 + Math.random() * 20;
+          fish.userData.vy *= -0.15; // Rebote muy suave
+          fish.userData.vx *= 0.5; // Más fricción
+          fish.userData.vz *= 0.5;
+          // Pequeño movimiento para acomodarse en la celda
+          fish.userData.vx += (Math.random() - 0.5) * 3;
+          fish.userData.vz += (Math.random() - 0.5) * 3;
+          // Reducir rotación
+          fish.userData.rotSpeed.x *= 0.6;
+          fish.userData.rotSpeed.y *= 0.6;
+          fish.userData.rotSpeed.z *= 0.6;
         }
         
         // Rotar naturalmente
@@ -1009,23 +1015,28 @@
         }
       }
       
-      // Calcular % de llenado del bin (basado en altura de pescados)
-      const MAX_FISH = 100; // Capacidad máxima aumentada
+      // Calcular % de llenado del bin basado en altura máxima de pescados
       const fishInBin = fallingFish.filter(f => 
-        f.position.y < BIN_H + 200 && 
         f.position.y > 0 &&
         f.position.x > BIN_POS_X - BIN_W/2 - 50 && f.position.x < BIN_POS_X + BIN_W/2 + 50 &&
         f.position.z > BIN_POS_Z - BIN_L/2 - 50 && f.position.z < BIN_POS_Z + BIN_L/2 + 50
-      ).length;
-      const fillPercent = Math.min(Math.round((fishInBin / MAX_FISH) * 100), 150);
+      );
+      
+      // Altura máxima de pescados en el bin
+      const maxFishHeight = fishInBin.length > 0 ? Math.max(...fishInBin.map(f => f.position.y)) : 0;
+      // El bin tiene altura BIN_H (900), llenado = altura pescados / altura bin
+      const fillPercent = Math.min(Math.round((maxFishHeight / BIN_H) * 100), 150);
+      
+      // También mostrar cantidad de pescados
+      const fishCount = fishInBin.length;
       
       // Actualizar indicador
       const binFillEl = document.getElementById('bin-fill');
-      binFillEl.textContent = `🐟 Bin: ${fillPercent}%`;
+      binFillEl.textContent = `🐟 Bin: ${fillPercent}% (${fishCount})`;
       binFillEl.className = '';
       if (fillPercent >= 100) {
         binFillEl.classList.add('overflow');
-        binFillEl.textContent = `🐟 ¡REBALSANDO! ${fillPercent}%`;
+        binFillEl.textContent = `🐟 ¡REBALSANDO! ${fillPercent}% (${fishCount})`;
       } else if (fillPercent >= 70) {
         binFillEl.classList.add('warning');
       }
