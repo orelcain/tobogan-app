@@ -40,7 +40,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
     <button class="btn" id="btn-guillotina">Abrir guillotina</button>
-    <div class="badge" id="version-badge">v2.6.2</div>
+    <div class="badge" id="version-badge">v2.6.3</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="bin-fill">Bin: 0</div>
@@ -64,7 +64,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.6.2';
+    const APP_VERSION = 'v2.6.3';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -990,9 +990,17 @@
           }
         }
         
+        // Si el pescado está POR ENCIMA del bin (rebalsando), puede caer por los lados
+        if (fish.position.y > binTop && inBinArea) {
+          // Empujar hacia afuera del bin para que rebalse visualmente
+          const pushDir = Math.random() > 0.5 ? 1 : -1;
+          fish.userData.vx += pushDir * 2;
+          fish.userData.vz += (Math.random() - 0.5) * 4;
+        }
+        
         // Colisión con fondo del bin - apilar pescados de forma compacta
         // Dividir bin en celdas para apilar mejor
-        const cellSize = 120; // Tamaño de celda
+        const cellSize = 100; // Celdas más pequeñas = apilado más compacto
         const fishCellX = Math.floor((fish.position.x - (BIN_POS_X - BIN_W/2)) / cellSize);
         const fishCellZ = Math.floor((fish.position.z - (BIN_POS_Z - BIN_L/2)) / cellSize);
         
@@ -1004,8 +1012,8 @@
           f.position.y < fish.position.y + 50
         ).length;
         
-        // Cada pescado en la celda agrega 60mm de altura (se apilan más rápido)
-        const stackHeight = binFloorY + fishInSameCell * 60;
+        // Cada pescado en la celda agrega 80mm de altura (apilado más rápido)
+        const stackHeight = binFloorY + fishInSameCell * 80;
         
         if (fish.position.y < stackHeight + 30) {
           fish.position.y = stackHeight + 30 + Math.random() * 20;
@@ -1050,13 +1058,13 @@
       // También mostrar cantidad de pescados
       const fishCount = fishInBin.length;
       
-      // Actualizar indicador (solo cantidad, más estable)
+      // Actualizar indicador (% basado en altura real)
       const binFillEl = document.getElementById('bin-fill');
-      binFillEl.textContent = `Bin: ${fishCount} peces`;
+      binFillEl.textContent = `Bin: ${fillPercent}%`;
       binFillEl.className = '';
       if (fillPercent >= 100) {
         binFillEl.classList.add('overflow');
-        binFillEl.textContent = `¡LLENO! ${fishCount} peces`;
+        binFillEl.textContent = `¡REBALSANDO! ${fillPercent}%`;
       } else if (fillPercent >= 70) {
         binFillEl.classList.add('warning');
       }
