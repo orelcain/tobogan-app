@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.6.0';
+    const APP_VERSION = 'v2.0.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -122,26 +122,68 @@
     const BIN_POS_X = ROOM_W/2 - WALL_THK - BIN_W/2 - 100 - 300 + 200 - 100 + 100; // +10cm hacia pared 2
     const BIN_POS_Z = ROOM_L/2 - WALL_THK - BIN_L/2 - 700 + 90 + 70; // Movido hacia pared 4 +7cm
 
-    // Cargar texturas fotorrealistas desde URLs
-    const textureLoader = new THREE.TextureLoader();
+    // ======== TEXTURAS PROFESIONALES PBR ========
     
-    // Textura de concreto (piso)
-    const concreteTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/terrain/grasslight-big.jpg');
-    concreteTexture.wrapS = concreteTexture.wrapT = THREE.RepeatWrapping;
-    concreteTexture.repeat.set(4, 4);
+    // Crear textura de concreto gris procedural (realista)
+    function createConcreteTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      // Base gris concreto
+      ctx.fillStyle = '#707070';
+      ctx.fillRect(0, 0, 512, 512);
+      // Ruido y variación
+      for (let i = 0; i < 8000; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const shade = 100 + Math.random() * 60;
+        ctx.fillStyle = `rgb(${shade},${shade},${shade})`;
+        ctx.fillRect(x, y, Math.random() * 3 + 1, Math.random() * 3 + 1);
+      }
+      // Algunas grietas sutiles
+      ctx.strokeStyle = 'rgba(50,50,50,0.3)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * 512, Math.random() * 512);
+        ctx.lineTo(Math.random() * 512, Math.random() * 512);
+        ctx.stroke();
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+      return tex;
+    }
+    const concreteTexture = createConcreteTexture();
     
-    // Textura de metal brushed (paneles PIR)
-    const metalTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/hardwood2_diffuse.jpg');
-    metalTexture.wrapS = metalTexture.wrapT = THREE.RepeatWrapping;
-    metalTexture.repeat.set(2, 2);
-    
-    // Textura de acero inoxidable (toboganes)
-    const steelTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/brick_diffuse.jpg');
-    steelTexture.wrapS = steelTexture.wrapT = THREE.RepeatWrapping;
-    
-    // Textura de escamas (pescados)
-    const fishTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/water.jpg');
-    fishTexture.wrapS = fishTexture.wrapT = THREE.RepeatWrapping;
+    // Crear textura de escamas de pescado realista
+    function createFishScalesTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      // Gradiente base plateado
+      const grad = ctx.createLinearGradient(0, 0, 256, 256);
+      grad.addColorStop(0, '#c0c8d0');
+      grad.addColorStop(0.5, '#8090a0');
+      grad.addColorStop(1, '#a0b0c0');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 256, 256);
+      // Escamas en patrón
+      ctx.strokeStyle = 'rgba(60,70,80,0.4)';
+      ctx.lineWidth = 0.5;
+      for (let row = 0; row < 20; row++) {
+        for (let col = 0; col < 20; col++) {
+          const offsetX = (row % 2) * 6;
+          ctx.beginPath();
+          ctx.arc(col * 13 + offsetX, row * 13, 6, 0, Math.PI, false);
+          ctx.stroke();
+        }
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+    const fishTexture = createFishScalesTexture();
 
     // Piso de concreto con 50cm de profundidad
     const FLOOR_DEPTH = 500;
@@ -157,23 +199,24 @@
     scene.add(floor);
 
     const wallGroup = new THREE.Group();
+    // Paneles PIR blancos con acabado profesional
     const wallMat = new THREE.MeshPhysicalMaterial({ 
-      map: metalTexture,
-      color: 0xd0d8e0,
+      color: 0xffffff,  // Blanco puro
       transparent: true, 
-      opacity: 0.7, 
-      transmission: 0.15,
-      roughness: 0.4,
-      metalness: 0.0,
+      opacity: 0.85, 
+      transmission: 0.1,
+      roughness: 0.3,
+      metalness: 0.05,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.4,
       side: THREE.DoubleSide,
       depthWrite: false
     });
-    const edgeMat = new THREE.LineBasicMaterial({ color: 0x4a6b8a, linewidth: 2 });
+    // Bordes sutiles grises
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0xb0b8c0, linewidth: 1 });
     const halfW = ROOM_W / 2 - WALL_THK / 2, halfL = ROOM_L / 2 - WALL_THK / 2, wallH = ROOM_H - 100;
     
     const PANEL_WIDTH = 1000;
-    const BASEBOARD_HEIGHT = 200; // Zócalo de 20cm
-    const baseboardMat = new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 0.9 });
     
     // Pared 3 (frontal, -z): paneles de 1m completos desde piso
     for (let i = 0; i < 4; i++) {
@@ -278,27 +321,7 @@
     }
     scene.add(wallGroup);
 
-    function makeLabel(text) {
-      const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = 256;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.fillRect(0,0,256,256);
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = 'bold 140px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, 128, 128);
-      const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }));
-      spr.scale.set(600, 600, 1);
-      return spr;
-    }
-    const labels = [makeLabel('1'), makeLabel('2'), makeLabel('3'), makeLabel('4')];
-    labels[0].position.set(-ROOM_W/2 + WALL_THK + 20, ROOM_H/2, 0);
-    labels[1].position.set(ROOM_W/2 - WALL_THK - 20, ROOM_H/2, 0);
-    labels[2].position.set(0, ROOM_H/2, -ROOM_L/2 + WALL_THK + 20);
-    labels[3].position.set(0, ROOM_H/2, ROOM_L/2 - WALL_THK - 20);
-    labels.forEach(l => scene.add(l));
+    // Labels de paredes eliminados para aspecto profesional
 
     const binGroup = new THREE.Group();
     const binMat = new THREE.MeshStandardMaterial({ color: 0x1f66d8, transparent: true, opacity: 0.95 });
@@ -317,41 +340,113 @@
     const wB = wF.clone(); wB.position.z = -BIN_L/2 + BIN_THK/2;
     [wL, wR, wF, wB].forEach(w => binGroup.add(w));
 
-    // Pescados decomisados (30 unidades) con forma más realista
-    const fishMat = new THREE.MeshStandardMaterial({ 
-      map: fishTexture,
-      color: 0xb0bcc8,
-      metalness: 0.3, 
-      roughness: 0.4
-    });
-    for (let i = 0; i < 30; i++) {
+    // ===== PESCADOS REALISTAS con geometría detallada =====
+    function createRealisticFish(size) {
       const fish = new THREE.Group();
+      const scale = size || 1;
       
-      // Cuerpo del pescado (más alargado y estrecho)
-      const bodyLength = 80 + Math.random() * 50;
-      const bodyWidth = 12 + Math.random() * 8;
-      const bodyGeom = new THREE.SphereGeometry(bodyWidth, 12, 8);
-      bodyGeom.scale(bodyLength/bodyWidth/2.5, 1, 0.8);
-      const body = new THREE.Mesh(bodyGeom, fishMat);
+      // Material plateado-gris con escamas
+      const bodyMat = new THREE.MeshPhysicalMaterial({ 
+        map: fishTexture,
+        color: 0x9aa5b0,
+        metalness: 0.4, 
+        roughness: 0.3,
+        clearcoat: 0.5
+      });
+      const finMat = new THREE.MeshStandardMaterial({ 
+        color: 0x708090,
+        metalness: 0.2, 
+        roughness: 0.5,
+        transparent: true,
+        opacity: 0.8
+      });
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x101010, metalness: 0.9 });
+      
+      // Cuerpo principal (forma de pez usando LatheGeometry)
+      const bodyPoints = [];
+      for (let i = 0; i <= 20; i++) {
+        const t = i / 20;
+        // Perfil de pez: más ancho en el centro, estrecho en cabeza y cola
+        const y = (t - 0.5) * 100 * scale;
+        let x;
+        if (t < 0.3) {
+          x = Math.sin(t / 0.3 * Math.PI / 2) * 18 * scale; // Cabeza
+        } else if (t < 0.7) {
+          x = (18 - (t - 0.3) * 8) * scale; // Cuerpo
+        } else {
+          x = Math.cos((t - 0.7) / 0.3 * Math.PI / 2) * 10 * scale; // Cola
+        }
+        bodyPoints.push(new THREE.Vector2(Math.max(x, 1), y));
+      }
+      const bodyGeom = new THREE.LatheGeometry(bodyPoints, 12);
+      bodyGeom.rotateZ(Math.PI / 2);
+      const body = new THREE.Mesh(bodyGeom, bodyMat);
       fish.add(body);
       
-      // Cola triangular
-      const tailGeom = new THREE.ConeGeometry(bodyWidth * 0.6, bodyWidth * 1.2, 3);
-      const tail = new THREE.Mesh(tailGeom, fishMat);
-      tail.rotation.z = Math.PI / 2;
-      tail.position.x = -bodyLength / 2;
+      // Cola (forma de V usando dos triángulos)
+      const tailShape = new THREE.Shape();
+      tailShape.moveTo(0, 0);
+      tailShape.lineTo(-25 * scale, 20 * scale);
+      tailShape.lineTo(-20 * scale, 0);
+      tailShape.lineTo(-25 * scale, -20 * scale);
+      tailShape.lineTo(0, 0);
+      const tailGeom = new THREE.ShapeGeometry(tailShape);
+      const tail = new THREE.Mesh(tailGeom, finMat);
+      tail.position.x = -50 * scale;
+      tail.rotation.y = Math.PI / 2;
       fish.add(tail);
       
-      // Posicionar aleatoriamente dentro del bin
+      // Aleta dorsal
+      const dorsalShape = new THREE.Shape();
+      dorsalShape.moveTo(0, 0);
+      dorsalShape.quadraticCurveTo(15 * scale, 25 * scale, 30 * scale, 0);
+      const dorsalGeom = new THREE.ShapeGeometry(dorsalShape);
+      const dorsal = new THREE.Mesh(dorsalGeom, finMat);
+      dorsal.position.set(5 * scale, 15 * scale, 0);
+      dorsal.rotation.x = Math.PI / 2;
+      fish.add(dorsal);
+      
+      // Aleta pectoral (ambos lados)
+      const pectoralShape = new THREE.Shape();
+      pectoralShape.moveTo(0, 0);
+      pectoralShape.quadraticCurveTo(10 * scale, 15 * scale, 20 * scale, 5 * scale);
+      pectoralShape.lineTo(0, 0);
+      const pectoralGeom = new THREE.ShapeGeometry(pectoralShape);
+      const pectoral1 = new THREE.Mesh(pectoralGeom, finMat);
+      pectoral1.position.set(15 * scale, 0, 10 * scale);
+      pectoral1.rotation.set(0, 0, -0.5);
+      fish.add(pectoral1);
+      const pectoral2 = pectoral1.clone();
+      pectoral2.position.z = -10 * scale;
+      pectoral2.rotation.z = 0.5;
+      fish.add(pectoral2);
+      
+      // Ojos (esferas pequeñas)
+      const eyeGeom = new THREE.SphereGeometry(3 * scale, 8, 8);
+      const eye1 = new THREE.Mesh(eyeGeom, eyeMat);
+      eye1.position.set(35 * scale, 5 * scale, 8 * scale);
+      fish.add(eye1);
+      const eye2 = eye1.clone();
+      eye2.position.z = -8 * scale;
+      fish.add(eye2);
+      
+      return fish;
+    }
+    
+    // Crear 30 pescados realistas
+    for (let i = 0; i < 30; i++) {
+      const fishSize = 0.6 + Math.random() * 0.5;
+      const fish = createRealisticFish(fishSize);
+      
       fish.position.set(
-        (Math.random() - 0.5) * (BIN_W - 200),
-        BIN_THK + 50 + Math.random() * 200,
-        (Math.random() - 0.5) * (BIN_L - 200)
+        (Math.random() - 0.5) * (BIN_W - 250),
+        BIN_THK + 30 + Math.random() * 180,
+        (Math.random() - 0.5) * (BIN_L - 250)
       );
       fish.rotation.set(
+        (Math.random() - 0.5) * 0.8,
         Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2
+        (Math.random() - 0.5) * 0.6
       );
       binGroup.add(fish);
     }
@@ -373,12 +468,15 @@
       // Tobogán derecho (cerca pared 2)
       object.position.set(1550, 900, 1340);
       
-      // Aplicar material acero inoxidable brillante a todos los meshes
-      const stainlessSteelMat = new THREE.MeshStandardMaterial({
-        map: steelTexture,
-        color: 0xffffff,
-        metalness: 1.0,
-        roughness: 0.15
+      // Aplicar material acero inoxidable brillante REAL (sin textura externa)
+      const stainlessSteelMat = new THREE.MeshPhysicalMaterial({
+        color: 0xe8e8e8,
+        metalness: 0.95,
+        roughness: 0.08,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        reflectivity: 1.0,
+        envMapIntensity: 1.5
       });
       
       object.traverse((child) => {
@@ -437,12 +535,195 @@
     document.getElementById('btn-toggle-walls').addEventListener('click', () => {
       wallsVisible = !wallsVisible;
       wallGroup.visible = wallsVisible;
-      labels.forEach(l => l.visible = wallsVisible);
       document.getElementById('btn-toggle-walls').textContent = wallsVisible ? 'Ocultar paneles' : 'Mostrar paneles';
     });
 
+    // ===== AVATARES ANIMADOS =====
+    // Crear avatar humanoide estilizado
+    function createAvatar(color) {
+      const avatar = new THREE.Group();
+      
+      // Material para piel
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xdeb887, roughness: 0.8 });
+      // Material para ropa
+      const clothMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
+      // Material para botas
+      const bootMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.9 });
+      
+      // Cabeza
+      const headGeom = new THREE.SphereGeometry(80, 16, 16);
+      const head = new THREE.Mesh(headGeom, skinMat);
+      head.position.y = 1600;
+      avatar.add(head);
+      
+      // Ojos
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+      const eyeGeom = new THREE.SphereGeometry(12, 8, 8);
+      const eye1 = new THREE.Mesh(eyeGeom, eyeMat);
+      eye1.position.set(30, 1620, 60);
+      avatar.add(eye1);
+      const eye2 = eye1.clone();
+      eye2.position.x = -30;
+      avatar.add(eye2);
+      
+      // Cuerpo/Torso
+      const torsoGeom = new THREE.CylinderGeometry(100, 120, 450, 16);
+      const torso = new THREE.Mesh(torsoGeom, clothMat);
+      torso.position.y = 1250;
+      avatar.add(torso);
+      
+      // Brazos (grupos para animación)
+      avatar.leftArm = new THREE.Group();
+      avatar.rightArm = new THREE.Group();
+      
+      const armGeom = new THREE.CylinderGeometry(30, 35, 350, 12);
+      const forearmGeom = new THREE.CylinderGeometry(25, 30, 300, 12);
+      const handGeom = new THREE.SphereGeometry(35, 12, 12);
+      
+      // Brazo izquierdo
+      const leftUpperArm = new THREE.Mesh(armGeom, clothMat);
+      leftUpperArm.position.y = -175;
+      avatar.leftArm.add(leftUpperArm);
+      const leftForearm = new THREE.Mesh(forearmGeom, skinMat);
+      leftForearm.position.y = -350 - 150;
+      avatar.leftArm.add(leftForearm);
+      const leftHand = new THREE.Mesh(handGeom, skinMat);
+      leftHand.position.y = -350 - 300 - 35;
+      avatar.leftArm.add(leftHand);
+      avatar.leftArm.position.set(-140, 1420, 0);
+      avatar.add(avatar.leftArm);
+      
+      // Brazo derecho
+      const rightUpperArm = new THREE.Mesh(armGeom, clothMat);
+      rightUpperArm.position.y = -175;
+      avatar.rightArm.add(rightUpperArm);
+      const rightForearm = new THREE.Mesh(forearmGeom, skinMat);
+      rightForearm.position.y = -350 - 150;
+      avatar.rightArm.add(rightForearm);
+      const rightHand = new THREE.Mesh(handGeom, skinMat);
+      rightHand.position.y = -350 - 300 - 35;
+      avatar.rightArm.add(rightHand);
+      avatar.rightArm.position.set(140, 1420, 0);
+      avatar.add(avatar.rightArm);
+      
+      // Piernas
+      const legGeom = new THREE.CylinderGeometry(50, 45, 450, 12);
+      const leg1 = new THREE.Mesh(legGeom, clothMat);
+      leg1.position.set(-60, 775, 0);
+      avatar.add(leg1);
+      const leg2 = leg1.clone();
+      leg2.position.x = 60;
+      avatar.add(leg2);
+      
+      // Pies/Botas
+      const bootGeom = new THREE.BoxGeometry(80, 100, 140);
+      const boot1 = new THREE.Mesh(bootGeom, bootMat);
+      boot1.position.set(-60, 500, 20);
+      avatar.add(boot1);
+      const boot2 = boot1.clone();
+      boot2.position.x = 60;
+      avatar.add(boot2);
+      
+      // Gorra de trabajador
+      const capGeom = new THREE.CylinderGeometry(90, 85, 40, 16);
+      const cap = new THREE.Mesh(capGeom, clothMat);
+      cap.position.y = 1680;
+      avatar.add(cap);
+      const visGeom = new THREE.CylinderGeometry(60, 70, 10, 16, 1, false, 0, Math.PI);
+      const visor = new THREE.Mesh(visGeom, clothMat);
+      visor.rotation.x = -Math.PI / 2;
+      visor.position.set(0, 1660, 70);
+      avatar.add(visor);
+      
+      return avatar;
+    }
+    
+    // Crear 2 avatares
+    const avatar1 = createAvatar(0x2563eb); // Azul
+    const avatar2 = createAvatar(0x16a34a); // Verde
+    
+    // Posicionar detrás de pared 4, frente a los huecos
+    avatar1.position.set(h1x, 0, ROOM_L/2 + 400); // Frente al hueco 1
+    avatar1.rotation.y = Math.PI; // Mirando hacia los huecos
+    scene.add(avatar1);
+    
+    avatar2.position.set(h2x, 0, ROOM_L/2 + 400); // Frente al hueco 2
+    avatar2.rotation.y = Math.PI;
+    scene.add(avatar2);
+    
+    // Pescados que caen - pool de animación
+    const fallingFish = [];
+    function createFallingFish(startX, startZ) {
+      const fish = createRealisticFish(0.7);
+      fish.position.set(startX, TOBOGAN_HOLE_Y, startZ);
+      fish.userData = {
+        vx: (Math.random() - 0.5) * 5,
+        vy: 0,
+        vz: -15 - Math.random() * 5,
+        startX: startX,
+        phase: 'falling'
+      };
+      scene.add(fish);
+      return fish;
+    }
+    
+    // Variables de animación
+    let animTime = 0;
+    const animationSpeed = 0.016;
+    
+    // Función para animar brazos (movimiento de colocar pescado)
+    function animateAvatar(avatar, time, offset) {
+      const cycle = ((time + offset) % 3); // Ciclo de 3 segundos
+      
+      if (cycle < 1.5) {
+        // Fase 1: Levantar brazos hacia el hueco
+        const t = cycle / 1.5;
+        avatar.leftArm.rotation.x = -t * 1.2;
+        avatar.rightArm.rotation.x = -t * 1.2;
+        avatar.leftArm.rotation.z = t * 0.3;
+        avatar.rightArm.rotation.z = -t * 0.3;
+      } else {
+        // Fase 2: Soltar y bajar brazos
+        const t = (cycle - 1.5) / 1.5;
+        avatar.leftArm.rotation.x = -1.2 + t * 1.2;
+        avatar.rightArm.rotation.x = -1.2 + t * 1.2;
+        avatar.leftArm.rotation.z = 0.3 - t * 0.3;
+        avatar.rightArm.rotation.z = -0.3 + t * 0.3;
+      }
+    }
+
     function animate() {
       requestAnimationFrame(animate);
+      
+      animTime += animationSpeed;
+      
+      // Animar avatares
+      animateAvatar(avatar1, animTime, 0);
+      animateAvatar(avatar2, animTime, 1.5); // Desfasado
+      
+      // Crear pescados nuevos periódicamente
+      if (Math.floor(animTime * 10) % 30 === 0 && fallingFish.length < 10) {
+        const whichHole = Math.random() > 0.5 ? h1x : h2x;
+        fallingFish.push(createFallingFish(whichHole, ROOM_L/2));
+      }
+      
+      // Animar pescados cayendo
+      for (let i = fallingFish.length - 1; i >= 0; i--) {
+        const fish = fallingFish[i];
+        fish.userData.vy -= 0.5; // Gravedad
+        fish.position.x += fish.userData.vx;
+        fish.position.y += fish.userData.vy;
+        fish.position.z += fish.userData.vz;
+        fish.rotation.x += 0.05;
+        fish.rotation.z += 0.03;
+        
+        // Si llegó al bin, remover
+        if (fish.position.y < BIN_THK + 100) {
+          scene.remove(fish);
+          fallingFish.splice(i, 1);
+        }
+      }
+      
       controls.update();
       renderer.render(scene, camera);
     }
