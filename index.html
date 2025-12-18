@@ -177,9 +177,10 @@
     // Pared 4 (trasera, +z): usando Shape con holes para agujeros reales
     const DOOR_WIDTH = 2000;
     const DOOR_HEIGHT = 2000;
+    const DOOR_X_START = -ROOM_W/2 + 300; // 300mm desde pared 1
     const TOBOGAN_HOLE_W = 400;
     const TOBOGAN_HOLE_H = 300;
-    const TOBOGAN_HOLE_Y = 1800; // Centro de agujeros
+    const TOBOGAN_HOLE_Y = 1050; // Altura para que cuadre con toboganes (y=900)
     
     // Zócalo completo
     const baseboard4 = new THREE.Mesh(
@@ -198,16 +199,16 @@
     wall4Shape.lineTo(-ROOM_W/2, wallH);
     wall4Shape.lineTo(-ROOM_W/2, BASEBOARD_HEIGHT);
     
-    // Hueco 1: Puerta (2000x2000 centrada)
+    // Hueco 1: Puerta (2000mm ancho desde 300mm de pared 1, altura 2000mm)
     const doorHole = new THREE.Path();
-    doorHole.moveTo(-DOOR_WIDTH/2, BASEBOARD_HEIGHT);
-    doorHole.lineTo(DOOR_WIDTH/2, BASEBOARD_HEIGHT);
-    doorHole.lineTo(DOOR_WIDTH/2, BASEBOARD_HEIGHT + DOOR_HEIGHT);
-    doorHole.lineTo(-DOOR_WIDTH/2, BASEBOARD_HEIGHT + DOOR_HEIGHT);
-    doorHole.lineTo(-DOOR_WIDTH/2, BASEBOARD_HEIGHT);
+    doorHole.moveTo(DOOR_X_START, BASEBOARD_HEIGHT);
+    doorHole.lineTo(DOOR_X_START + DOOR_WIDTH, BASEBOARD_HEIGHT);
+    doorHole.lineTo(DOOR_X_START + DOOR_WIDTH, BASEBOARD_HEIGHT + DOOR_HEIGHT);
+    doorHole.lineTo(DOOR_X_START, BASEBOARD_HEIGHT + DOOR_HEIGHT);
+    doorHole.lineTo(DOOR_X_START, BASEBOARD_HEIGHT);
     wall4Shape.holes.push(doorHole);
     
-    // Hueco 2: Agujero tobogán izquierdo (400x300 en x=950, y=1800)
+    // Hueco 2: Agujero tobogán izquierdo (400x300 en x=950)
     const hole1 = new THREE.Path();
     const h1x = 950 - ROOM_W/2; // Convertir a coordenadas relativas
     hole1.moveTo(h1x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
@@ -217,7 +218,7 @@
     hole1.lineTo(h1x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     wall4Shape.holes.push(hole1);
     
-    // Hueco 3: Agujero tobogán derecho (400x300 en x=1550, y=1800)
+    // Hueco 3: Agujero tobogán derecho (400x300 en x=1550)
     const hole2 = new THREE.Path();
     const h2x = 1550 - ROOM_W/2; // Convertir a coordenadas relativas
     hole2.moveTo(h2x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
