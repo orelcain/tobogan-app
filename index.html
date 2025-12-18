@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.1.0';
+    const APP_VERSION = 'v2.2.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -486,23 +486,22 @@
       // Tobogán derecho (cerca pared 2)
       object.position.set(1550, 900, 1340);
       
-      // Aplicar material acero inoxidable brillante REAL con envMap
-      const stainlessSteelMat = new THREE.MeshPhysicalMaterial({
-        color: 0xdcdcdc,
-        metalness: 1.0,
-        roughness: 0.15,
-        clearcoat: 0.8,
-        clearcoatRoughness: 0.2,
-        reflectivity: 1.0,
-        envMap: envTexture,
-        envMapIntensity: 2.5
+      // Estilo SketchUp: blanco con líneas negras para ver la forma
+      const sketchupMat = new THREE.MeshBasicMaterial({
+        color: 0xf5f5f5,
+        side: THREE.DoubleSide
       });
+      const wireframeMat = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 1 });
       
       object.traverse((child) => {
         if (child.isMesh) {
-          child.material = stainlessSteelMat;
-          child.castShadow = true;
-          child.receiveShadow = true;
+          child.material = sketchupMat;
+          // Agregar wireframe
+          const wireframe = new THREE.LineSegments(
+            new THREE.EdgesGeometry(child.geometry, 15),
+            wireframeMat
+          );
+          child.add(wireframe);
         }
       });
       
@@ -725,12 +724,21 @@
     const avatar1 = createAvatar(0x2563eb, 'Trabajador1'); // Azul
     const avatar2 = createAvatar(0x16a34a, 'Trabajador2'); // Verde
     
-    // Posicionar detrás de pared 4, frente a los huecos
-    avatar1.position.set(h1x, 0, ROOM_L/2 + 350);
+    // El avatar original mide ~1700mm, escalar a 1800mm (180cm)
+    const avatarScale = 1800 / 1700;
+    avatar1.scale.set(avatarScale, avatarScale, avatarScale);
+    avatar2.scale.set(avatarScale, avatarScale, avatarScale);
+    
+    // Posicionar detrás de pared 4, en el piso (y = -410 para que las botas toquen y=0)
+    // Las botas están en y=470, con escala 1.06 → 470*1.06 = 498, altura bota = 120*1.06 = 127
+    // Base de bota = 498 - 127/2 = 435. Para que toque piso: y = -435 + algo de ajuste
+    const avatarY = -410; // Ajuste para que pisen el piso
+    
+    avatar1.position.set(h1x, avatarY, ROOM_L/2 + 400);
     avatar1.rotation.y = Math.PI;
     scene.add(avatar1);
     
-    avatar2.position.set(h2x, 0, ROOM_L/2 + 350);
+    avatar2.position.set(h2x, avatarY, ROOM_L/2 + 400);
     avatar2.rotation.y = Math.PI;
     scene.add(avatar2);
     
