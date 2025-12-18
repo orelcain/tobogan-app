@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.5.0';
+    const APP_VERSION = 'v1.5.1';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -206,11 +206,9 @@
     const FLOOR_DEPTH = 500;
     const floorGeom = new THREE.BoxGeometry(5000, FLOOR_DEPTH, 5000);
     const floorMat = new THREE.MeshStandardMaterial({ 
-      map: concreteTexture,
-      color: 0xffffff,
-      roughness: 0.95,
-      metalness: 0.0,
-      normalScale: new THREE.Vector2(0.5, 0.5)
+      color: 0xa8a8a8,
+      roughness: 0.9,
+      metalness: 0.0
     });
     const floor = new THREE.Mesh(floorGeom, floorMat);
     floor.position.y = -FLOOR_DEPTH/2;
@@ -219,13 +217,12 @@
 
     const wallGroup = new THREE.Group();
     const wallMat = new THREE.MeshPhysicalMaterial({ 
-      map: pirTexture,
-      color: 0xffffff,
+      color: 0xa8c5e0,
       transparent: true, 
-      opacity: 0.75, 
-      transmission: 0.2,
-      roughness: 0.3,
-      metalness: 0.1,
+      opacity: 0.7, 
+      transmission: 0.15,
+      roughness: 0.4,
+      metalness: 0.0,
       side: THREE.DoubleSide,
       depthWrite: false
     });
@@ -254,8 +251,8 @@
     const DOOR_WIDTH = 1700;
     const DOOR_HEIGHT = 2000;
     const DOOR_X_START = -ROOM_W/2 + 300; // 300mm desde pared 1
-    const TOBOGAN_HOLE_W = 500; // 450 + 50
-    const TOBOGAN_HOLE_H = 350; // 300 + 50
+    const TOBOGAN_HOLE_W = 550; // 500 + 50
+    const TOBOGAN_HOLE_H = 350; // mantener altura
     const TOBOGAN_HOLE_Y = 1450; // +100mm: 1350 + 100
     
     // Crear Shape para pared completa con huecos (desde el piso)
@@ -378,22 +375,20 @@
     const wB = wF.clone(); wB.position.z = -BIN_L/2 + BIN_THK/2;
     [wL, wR, wF, wB].forEach(w => binGroup.add(w));
 
-    // Pescados decomisados (30 unidades) con forma realista
+    // Pescados decomisados (30 unidades) con forma más realista
     const fishMat = new THREE.MeshStandardMaterial({ 
-      map: fishTexture,
-      color: 0xffffff,
-      metalness: 0.2, 
-      roughness: 0.6,
-      normalScale: new THREE.Vector2(0.3, 0.3)
+      color: 0x95a5b0,
+      metalness: 0.4, 
+      roughness: 0.3
     });
     for (let i = 0; i < 30; i++) {
       const fish = new THREE.Group();
       
-      // Cuerpo del pescado (elipsoide)
-      const bodyLength = 60 + Math.random() * 40;
-      const bodyWidth = 20 + Math.random() * 15;
-      const bodyGeom = new THREE.SphereGeometry(bodyWidth, 8, 6);
-      bodyGeom.scale(bodyLength/bodyWidth/2, 1, 0.7);
+      // Cuerpo del pescado (más alargado y estrecho)
+      const bodyLength = 80 + Math.random() * 50;
+      const bodyWidth = 12 + Math.random() * 8;
+      const bodyGeom = new THREE.SphereGeometry(bodyWidth, 12, 8);
+      bodyGeom.scale(bodyLength/bodyWidth/2.5, 1, 0.8);
       const body = new THREE.Mesh(bodyGeom, fishMat);
       fish.add(body);
       
@@ -435,13 +430,11 @@
       // Tobogán derecho (cerca pared 2)
       object.position.set(1550, 900, 1340);
       
-      // Aplicar material acero inoxidable a todos los meshes
+      // Aplicar material acero inoxidable brillante a todos los meshes
       const stainlessSteelMat = new THREE.MeshStandardMaterial({
-        map: steelTexture,
-        color: 0xffffff,
-        metalness: 0.95,
-        roughness: 0.15,
-        envMapIntensity: 1.5
+        color: 0xe0e0e0,
+        metalness: 1.0,
+        roughness: 0.1
       });
       
       object.traverse((child) => {
