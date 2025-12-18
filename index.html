@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.3.6';
+    const APP_VERSION = 'v1.3.8';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -153,18 +153,11 @@
     const BASEBOARD_HEIGHT = 200; // Zócalo de 20cm
     const baseboardMat = new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 0.9 });
     
-    // Pared 3 (frontal, -z): paneles de 1m con bordes + zócalo
-    const baseboard3 = new THREE.Mesh(
-      new THREE.BoxGeometry(ROOM_W, BASEBOARD_HEIGHT, WALL_THK),
-      baseboardMat
-    );
-    baseboard3.position.set(0, BASEBOARD_HEIGHT/2, -halfL);
-    wallGroup.add(baseboard3);
-    
+    // Pared 3 (frontal, -z): paneles de 1m completos desde piso
     for (let i = 0; i < 4; i++) {
-      const panelGeom = new THREE.BoxGeometry(PANEL_WIDTH, wallH - BASEBOARD_HEIGHT, WALL_THK);
+      const panelGeom = new THREE.BoxGeometry(PANEL_WIDTH, wallH, WALL_THK);
       const panel = new THREE.Mesh(panelGeom, wallMat);
-      panel.position.set(-ROOM_W/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, -halfL);
+      panel.position.set(-ROOM_W/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH, wallH/2, -halfL);
       panel.renderOrder = 999;
       wallGroup.add(panel);
       
@@ -200,9 +193,9 @@
     doorHole.lineTo(DOOR_X_START, 0);
     wall4Shape.holes.push(doorHole);
     
-    // Hueco 2: Agujero tobogán izquierdo (400x300 en x=2950, y=1450)
+    // Hueco 2: Agujero tobogán izquierdo (400x300)
     const hole1 = new THREE.Path();
-    const h1x = 2950 - ROOM_W/2; // +1000mm: 1950 + 1000
+    const h1x = 2700 - ROOM_W/2; // 2950 - 200 - 50
     hole1.moveTo(h1x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole1.lineTo(h1x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole1.lineTo(h1x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y + TOBOGAN_HOLE_H/2);
@@ -210,9 +203,9 @@
     hole1.lineTo(h1x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     wall4Shape.holes.push(hole1);
     
-    // Hueco 3: Agujero tobogán derecho (400x300 en x=3450, y=1450)
+    // Hueco 3: Agujero tobogán derecho (400x300)
     const hole2 = new THREE.Path();
-    const h2x = 3450 - ROOM_W/2; // +1000mm: 2450 + 1000
+    const h2x = 3300 - ROOM_W/2; // 3450 - 200 + 50
     hole2.moveTo(h2x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole2.lineTo(h2x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole2.lineTo(h2x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y + TOBOGAN_HOLE_H/2);
@@ -226,41 +219,21 @@
       bevelEnabled: false
     };
     const wall4Geom = new THREE.ExtrudeGeometry(wall4Shape, extrudeSettings);
-    
-    // Crear materiales: zócalo abajo (200mm) y pared arriba
-    const materials4 = [
-      wallMat,  // Material lateral
-      wallMat   // Material frontal/trasero
-    ];
     const wall4Panel = new THREE.Mesh(wall4Geom, wallMat);
     wall4Panel.position.set(0, 0, halfL);
     wall4Panel.renderOrder = 999;
     wallGroup.add(wall4Panel);
-    
-    // Agregar zócalo de concreto en la parte baja (0-200mm)
-    const baseboard4Geom = new THREE.BoxGeometry(ROOM_W, BASEBOARD_HEIGHT, WALL_THK);
-    const baseboard4 = new THREE.Mesh(baseboard4Geom, baseboardMat);
-    baseboard4.position.set(0, BASEBOARD_HEIGHT/2, halfL);
-    baseboard4.renderOrder = 998;
-    wallGroup.add(baseboard4);
     
     // Agregar bordes
     const edges4 = new THREE.LineSegments(new THREE.EdgesGeometry(wall4Geom), edgeMat);
     edges4.position.copy(wall4Panel.position);
     wallGroup.add(edges4);
     
-    // Pared 1 (izquierda, -x): paneles de 1m con bordes + zócalo
-    const baseboard1 = new THREE.Mesh(
-      new THREE.BoxGeometry(WALL_THK, BASEBOARD_HEIGHT, ROOM_L),
-      baseboardMat
-    );
-    baseboard1.position.set(-halfW, BASEBOARD_HEIGHT/2, 0);
-    wallGroup.add(baseboard1);
-    
+    // Pared 1 (izquierda, -x): paneles de 1m completos desde piso
     for (let i = 0; i < 4; i++) {
-      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH - BASEBOARD_HEIGHT, PANEL_WIDTH);
+      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH);
       const panel = new THREE.Mesh(panelGeom, wallMat);
-      panel.position.set(-halfW, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
+      panel.position.set(-halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
       panel.renderOrder = 999;
       wallGroup.add(panel);
       
@@ -269,18 +242,11 @@
       wallGroup.add(edges);
     }
     
-    // Pared 2 (derecha, +x): paneles de 1m con bordes + zócalo
-    const baseboard2 = new THREE.Mesh(
-      new THREE.BoxGeometry(WALL_THK, BASEBOARD_HEIGHT, ROOM_L),
-      baseboardMat
-    );
-    baseboard2.position.set(halfW, BASEBOARD_HEIGHT/2, 0);
-    wallGroup.add(baseboard2);
-    
+    // Pared 2 (derecha, +x): paneles de 1m completos desde piso
     for (let i = 0; i < 4; i++) {
-      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH - BASEBOARD_HEIGHT, PANEL_WIDTH);
+      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH);
       const panel = new THREE.Mesh(panelGeom, wallMat);
-      panel.position.set(halfW, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
+      panel.position.set(halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
       panel.renderOrder = 999;
       wallGroup.add(panel);
       
