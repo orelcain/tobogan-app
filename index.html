@@ -30,7 +30,7 @@
       .btn-view { min-width: auto; min-height: 36px; padding: 8px 12px; font-size: 12px; }
     }
     .badge { padding: 8px 12px; border-radius: 6px; background: #0f172a; color: #a5b4fc; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 6px 18px rgba(0,0,0,0.35); font-size: 13px; }
-    #bin-fill { position: fixed; bottom: 70px; right: 12px; padding: 10px 14px; border-radius: 8px; background: linear-gradient(135deg, #1e3a5f, #0f172a); color: #7dd3fc; font-weight: 700; font-size: 14px; border: 2px solid #38bdf8; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    #bin-fill { position: fixed; bottom: 120px; right: 12px; padding: 10px 14px; border-radius: 8px; background: linear-gradient(135deg, #1e3a5f, #0f172a); color: #7dd3fc; font-weight: 700; font-size: 14px; border: 2px solid #38bdf8; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
     #bin-fill.warning { border-color: #fbbf24; color: #fde047; }
     #bin-fill.overflow { border-color: #ef4444; color: #fca5a5; animation: pulse 0.5s infinite; }
     @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
@@ -969,16 +969,29 @@
           }
         }
         
-        // Colisión con fondo del bin
-        if (fish.position.y < binFloorY) {
-          fish.position.y = binFloorY;
-          fish.userData.vy *= -0.3; // Rebote suave
-          fish.userData.vx *= 0.8; // Fricción
-          fish.userData.vz *= 0.8;
+        // Colisión con fondo del bin - apilar pescados
+        // Calcular altura de apilado basado en pescados ya en el bin
+        const fishBelow = fallingFish.filter(f => 
+          f !== fish &&
+          Math.abs(f.position.x - fish.position.x) < 80 &&
+          Math.abs(f.position.z - fish.position.z) < 80 &&
+          f.position.y < fish.position.y &&
+          f.position.y > binFloorY - 10
+        ).length;
+        const stackHeight = binFloorY + fishBelow * 40; // Cada pescado agrega 40mm de altura
+        
+        if (fish.position.y < stackHeight + 20) {
+          fish.position.y = stackHeight + 20 + Math.random() * 10;
+          fish.userData.vy *= -0.2; // Rebote mís suave
+          fish.userData.vx *= 0.7; // Fricción
+          fish.userData.vz *= 0.7;
+          // Añadir pequeño movimiento lateral aleatorio para que se acomoden
+          fish.userData.vx += (Math.random() - 0.5) * 2;
+          fish.userData.vz += (Math.random() - 0.5) * 2;
           // Reducir rotación al tocar fondo
-          fish.userData.rotSpeed.x *= 0.9;
-          fish.userData.rotSpeed.y *= 0.9;
-          fish.userData.rotSpeed.z *= 0.9;
+          fish.userData.rotSpeed.x *= 0.8;
+          fish.userData.rotSpeed.y *= 0.8;
+          fish.userData.rotSpeed.z *= 0.8;
         }
         
         // Rotar naturalmente
@@ -993,12 +1006,13 @@
         }
       }
       
-      // Calcular % de llenado del bin
-      const MAX_FISH = 50; // Capacidad máxima
+      // Calcular % de llenado del bin (basado en altura de pescados)
+      const MAX_FISH = 100; // Capacidad máxima aumentada
       const fishInBin = fallingFish.filter(f => 
-        f.position.y < BIN_H && 
-        f.position.x > binMinX - 100 && f.position.x < binMaxX + 100 &&
-        f.position.z > binMinZ - 100 && f.position.z < binMaxZ + 100
+        f.position.y < BIN_H + 200 && 
+        f.position.y > 0 &&
+        f.position.x > BIN_POS_X - BIN_W/2 - 50 && f.position.x < BIN_POS_X + BIN_W/2 + 50 &&
+        f.position.z > BIN_POS_Z - BIN_L/2 - 50 && f.position.z < BIN_POS_Z + BIN_L/2 + 50
       ).length;
       const fillPercent = Math.min(Math.round((fishInBin / MAX_FISH) * 100), 150);
       
