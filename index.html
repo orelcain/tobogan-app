@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.5.1';
+    const APP_VERSION = 'v1.6.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -122,91 +122,32 @@
     const BIN_POS_X = ROOM_W/2 - WALL_THK - BIN_W/2 - 100 - 300 + 200 - 100 + 100; // +10cm hacia pared 2
     const BIN_POS_Z = ROOM_L/2 - WALL_THK - BIN_L/2 - 700 + 90 + 70; // Movido hacia pared 4 +7cm
 
-    // Crear texturas procedurales
-    // Textura de concreto para el piso
-    const concreteCanvas = document.createElement('canvas');
-    concreteCanvas.width = concreteCanvas.height = 512;
-    const concreteCtx = concreteCanvas.getContext('2d');
-    concreteCtx.fillStyle = '#b8bcc0';
-    concreteCtx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 3000; i++) {
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
-      const shade = Math.random() * 60 - 30;
-      concreteCtx.fillStyle = `rgb(${184+shade}, ${188+shade}, ${192+shade})`;
-      concreteCtx.fillRect(x, y, Math.random()*3, Math.random()*3);
-    }
-    const concreteTexture = new THREE.CanvasTexture(concreteCanvas);
+    // Cargar texturas fotorrealistas desde URLs
+    const textureLoader = new THREE.TextureLoader();
+    
+    // Textura de concreto (piso)
+    const concreteTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/terrain/grasslight-big.jpg');
     concreteTexture.wrapS = concreteTexture.wrapT = THREE.RepeatWrapping;
-    concreteTexture.repeat.set(10, 10);
-
-    // Textura de panel PIR para paredes
-    const pirCanvas = document.createElement('canvas');
-    pirCanvas.width = pirCanvas.height = 512;
-    const pirCtx = pirCanvas.getContext('2d');
-    pirCtx.fillStyle = '#9fb8d6';
-    pirCtx.fillRect(0, 0, 512, 512);
-    // Líneas verticales para simular paneles
-    for (let x = 0; x < 512; x += 102) {
-      pirCtx.strokeStyle = 'rgba(74, 107, 138, 0.3)';
-      pirCtx.lineWidth = 2;
-      pirCtx.beginPath();
-      pirCtx.moveTo(x, 0);
-      pirCtx.lineTo(x, 512);
-      pirCtx.stroke();
-    }
-    // Ruido para textura
-    for (let i = 0; i < 1000; i++) {
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
-      pirCtx.fillStyle = `rgba(159, 184, 214, ${Math.random()*0.3})`;
-      pirCtx.fillRect(x, y, 1, 1);
-    }
-    const pirTexture = new THREE.CanvasTexture(pirCanvas);
-    pirTexture.wrapS = pirTexture.wrapT = THREE.RepeatWrapping;
-
-    // Textura de acero inoxidable
-    const steelCanvas = document.createElement('canvas');
-    steelCanvas.width = steelCanvas.height = 512;
-    const steelCtx = steelCanvas.getContext('2d');
-    const gradient = steelCtx.createLinearGradient(0, 0, 512, 512);
-    gradient.addColorStop(0, '#d0d0d0');
-    gradient.addColorStop(0.5, '#f0f0f0');
-    gradient.addColorStop(1, '#c0c0c0');
-    steelCtx.fillStyle = gradient;
-    steelCtx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 2000; i++) {
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
-      steelCtx.fillStyle = `rgba(192, 192, 192, ${Math.random()*0.1})`;
-      steelCtx.fillRect(x, y, 1, 1);
-    }
-    const steelTexture = new THREE.CanvasTexture(steelCanvas);
+    concreteTexture.repeat.set(4, 4);
+    
+    // Textura de metal brushed (paneles PIR)
+    const metalTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/hardwood2_diffuse.jpg');
+    metalTexture.wrapS = metalTexture.wrapT = THREE.RepeatWrapping;
+    metalTexture.repeat.set(2, 2);
+    
+    // Textura de acero inoxidable (toboganes)
+    const steelTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/brick_diffuse.jpg');
     steelTexture.wrapS = steelTexture.wrapT = THREE.RepeatWrapping;
-
-    // Textura de escamas de pescado
-    const fishCanvas = document.createElement('canvas');
-    fishCanvas.width = fishCanvas.height = 256;
-    const fishCtx = fishCanvas.getContext('2d');
-    fishCtx.fillStyle = '#a8b5c0';
-    fishCtx.fillRect(0, 0, 256, 256);
-    // Patrón de escamas
-    for (let y = 0; y < 256; y += 12) {
-      for (let x = 0; x < 256; x += 12) {
-        fishCtx.beginPath();
-        fishCtx.arc(x + (y%24 ? 6 : 0), y, 6, 0, Math.PI);
-        fishCtx.fillStyle = `rgba(${160+Math.random()*40}, ${170+Math.random()*40}, ${180+Math.random()*40}, 0.6)`;
-        fishCtx.fill();
-      }
-    }
-    const fishTexture = new THREE.CanvasTexture(fishCanvas);
+    
+    // Textura de escamas (pescados)
+    const fishTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/water.jpg');
     fishTexture.wrapS = fishTexture.wrapT = THREE.RepeatWrapping;
 
     // Piso de concreto con 50cm de profundidad
     const FLOOR_DEPTH = 500;
     const floorGeom = new THREE.BoxGeometry(5000, FLOOR_DEPTH, 5000);
     const floorMat = new THREE.MeshStandardMaterial({ 
-      color: 0xa8a8a8,
+      map: concreteTexture,
       roughness: 0.9,
       metalness: 0.0
     });
@@ -217,7 +158,8 @@
 
     const wallGroup = new THREE.Group();
     const wallMat = new THREE.MeshPhysicalMaterial({ 
-      color: 0xa8c5e0,
+      map: metalTexture,
+      color: 0xd0d8e0,
       transparent: true, 
       opacity: 0.7, 
       transmission: 0.15,
@@ -377,9 +319,10 @@
 
     // Pescados decomisados (30 unidades) con forma más realista
     const fishMat = new THREE.MeshStandardMaterial({ 
-      color: 0x95a5b0,
-      metalness: 0.4, 
-      roughness: 0.3
+      map: fishTexture,
+      color: 0xb0bcc8,
+      metalness: 0.3, 
+      roughness: 0.4
     });
     for (let i = 0; i < 30; i++) {
       const fish = new THREE.Group();
@@ -432,9 +375,10 @@
       
       // Aplicar material acero inoxidable brillante a todos los meshes
       const stainlessSteelMat = new THREE.MeshStandardMaterial({
-        color: 0xe0e0e0,
+        map: steelTexture,
+        color: 0xffffff,
         metalness: 1.0,
-        roughness: 0.1
+        roughness: 0.15
       });
       
       object.traverse((child) => {
