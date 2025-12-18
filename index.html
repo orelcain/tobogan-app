@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.3.4';
+    const APP_VERSION = 'v1.3.6';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -175,12 +175,12 @@
     }
     
     // Pared 4 (trasera, +z): usando Shape con holes para agujeros reales
-    const DOOR_WIDTH = 2000;
+    const DOOR_WIDTH = 1700;
     const DOOR_HEIGHT = 2000;
     const DOOR_X_START = -ROOM_W/2 + 300; // 300mm desde pared 1
     const TOBOGAN_HOLE_W = 400;
     const TOBOGAN_HOLE_H = 300;
-    const TOBOGAN_HOLE_Y = 1050; // Altura para que cuadre con toboganes (y=900)
+    const TOBOGAN_HOLE_Y = 1350; // Subir 300mm: 1050 + 300
     
     // Zócalo completo
     const baseboard4 = new THREE.Mesh(
@@ -208,9 +208,9 @@
     doorHole.lineTo(DOOR_X_START, BASEBOARD_HEIGHT);
     wall4Shape.holes.push(doorHole);
     
-    // Hueco 2: Agujero tobogán izquierdo (400x300 en x=950)
+    // Hueco 2: Agujero tobogán izquierdo (400x300 en x=1950)
     const hole1 = new THREE.Path();
-    const h1x = 950 - ROOM_W/2; // Convertir a coordenadas relativas
+    const h1x = 1950 - ROOM_W/2; // Convertir a coordenadas relativas
     hole1.moveTo(h1x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole1.lineTo(h1x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole1.lineTo(h1x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y + TOBOGAN_HOLE_H/2);
@@ -218,9 +218,9 @@
     hole1.lineTo(h1x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     wall4Shape.holes.push(hole1);
     
-    // Hueco 3: Agujero tobogán derecho (400x300 en x=1550)
+    // Hueco 3: Agujero tobogán derecho (400x300 en x=2450)
     const hole2 = new THREE.Path();
-    const h2x = 1550 - ROOM_W/2; // Convertir a coordenadas relativas
+    const h2x = 2450 - ROOM_W/2; // Convertir a coordenadas relativas
     hole2.moveTo(h2x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole2.lineTo(h2x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole2.lineTo(h2x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y + TOBOGAN_HOLE_H/2);
@@ -235,7 +235,7 @@
     };
     const wall4Geom = new THREE.ExtrudeGeometry(wall4Shape, extrudeSettings);
     const wall4Panel = new THREE.Mesh(wall4Geom, wallMat);
-    wall4Panel.position.set(0, 0, halfL - WALL_THK/2);
+    wall4Panel.position.set(0, 0, halfL);
     wall4Panel.renderOrder = 999;
     wallGroup.add(wall4Panel);
     
