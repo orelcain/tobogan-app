@@ -40,7 +40,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
     <button class="btn" id="btn-guillotina">Abrir guillotina</button>
-    <div class="badge" id="version-badge">v2.6.5</div>
+    <div class="badge" id="version-badge">v2.6.6</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="bin-fill">Bin: 0</div>
@@ -64,7 +64,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.6.5';
+    const APP_VERSION = 'v2.6.6';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -195,9 +195,9 @@
     // Líneas estilo dibujado a mano (gris cálido, no negro puro)
     const sketchLineMat = new THREE.LineBasicMaterial({ color: 0x5a5550, linewidth: 2 });
     
-    // Piso - beige cálido mate
+    // Piso - beige cálido mate (expandido 30% hacia los costados)
     const FLOOR_DEPTH = 500;
-    const floorGeom = new THREE.BoxGeometry(5000, FLOOR_DEPTH, 5000);
+    const floorGeom = new THREE.BoxGeometry(6500, FLOOR_DEPTH, 6500);
     const floorMat = new THREE.MeshBasicMaterial({ color: 0xd4cfc5 });
     const floor = new THREE.Mesh(floorGeom, floorMat);
     floor.position.y = -FLOOR_DEPTH/2;
@@ -207,8 +207,8 @@
     scene.add(floorWire);
 
     const wallGroup = new THREE.Group();
-    // Paredes - gris muy claro mate (más claro que suelo)
-    const wallMat = new THREE.MeshBasicMaterial({ color: 0xe5e2dd });
+    // Paredes - gris claro mate
+    const wallMat = new THREE.MeshBasicMaterial({ color: 0xd5d2cd });
     const halfW = ROOM_W / 2 - WALL_THK / 2, halfL = ROOM_L / 2 - WALL_THK / 2, wallH = ROOM_H - 100;
     
     const PANEL_WIDTH = 1000;
