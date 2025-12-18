@@ -174,43 +174,35 @@
       wallGroup.add(line);
     }
     
-    // Pared 4 (trasera, +z): usando Shape con holes para agujeros reales
+    // Pared 4 (trasera, +z): UNA geometría completa con Shape+holes (puerta + perforaciones)
     const DOOR_WIDTH = 1700;
     const DOOR_HEIGHT = 2000;
     const DOOR_X_START = -ROOM_W/2 + 300; // 300mm desde pared 1
     const TOBOGAN_HOLE_W = 400;
     const TOBOGAN_HOLE_H = 300;
-    const TOBOGAN_HOLE_Y = 1350; // Subir 300mm: 1050 + 300
+    const TOBOGAN_HOLE_Y = 1450; // +100mm: 1350 + 100
     
-    // Zócalo completo
-    const baseboard4 = new THREE.Mesh(
-      new THREE.BoxGeometry(ROOM_W, BASEBOARD_HEIGHT, WALL_THK),
-      baseboardMat
-    );
-    baseboard4.position.set(0, BASEBOARD_HEIGHT/2, halfL);
-    wallGroup.add(baseboard4);
-    
-    // Crear Shape para pared con huecos
+    // Crear Shape para pared completa con huecos (desde el piso)
     const wall4Shape = new THREE.Shape();
-    // Rectángulo exterior (toda la pared)
-    wall4Shape.moveTo(-ROOM_W/2, BASEBOARD_HEIGHT);
-    wall4Shape.lineTo(ROOM_W/2, BASEBOARD_HEIGHT);
+    // Rectángulo exterior (toda la pared desde y=0)
+    wall4Shape.moveTo(-ROOM_W/2, 0);
+    wall4Shape.lineTo(ROOM_W/2, 0);
     wall4Shape.lineTo(ROOM_W/2, wallH);
     wall4Shape.lineTo(-ROOM_W/2, wallH);
-    wall4Shape.lineTo(-ROOM_W/2, BASEBOARD_HEIGHT);
+    wall4Shape.lineTo(-ROOM_W/2, 0);
     
-    // Hueco 1: Puerta (2000mm ancho desde 300mm de pared 1, altura 2000mm)
+    // Hueco 1: Puerta (1700mm ancho desde 300mm de pared 1, altura 2000mm)
     const doorHole = new THREE.Path();
-    doorHole.moveTo(DOOR_X_START, BASEBOARD_HEIGHT);
-    doorHole.lineTo(DOOR_X_START + DOOR_WIDTH, BASEBOARD_HEIGHT);
-    doorHole.lineTo(DOOR_X_START + DOOR_WIDTH, BASEBOARD_HEIGHT + DOOR_HEIGHT);
-    doorHole.lineTo(DOOR_X_START, BASEBOARD_HEIGHT + DOOR_HEIGHT);
-    doorHole.lineTo(DOOR_X_START, BASEBOARD_HEIGHT);
+    doorHole.moveTo(DOOR_X_START, 0);
+    doorHole.lineTo(DOOR_X_START + DOOR_WIDTH, 0);
+    doorHole.lineTo(DOOR_X_START + DOOR_WIDTH, DOOR_HEIGHT);
+    doorHole.lineTo(DOOR_X_START, DOOR_HEIGHT);
+    doorHole.lineTo(DOOR_X_START, 0);
     wall4Shape.holes.push(doorHole);
     
-    // Hueco 2: Agujero tobogán izquierdo (400x300 en x=1950)
+    // Hueco 2: Agujero tobogán izquierdo (400x300 en x=2950, y=1450)
     const hole1 = new THREE.Path();
-    const h1x = 1950 - ROOM_W/2; // Convertir a coordenadas relativas
+    const h1x = 2950 - ROOM_W/2; // +1000mm: 1950 + 1000
     hole1.moveTo(h1x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole1.lineTo(h1x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole1.lineTo(h1x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y + TOBOGAN_HOLE_H/2);
@@ -218,9 +210,9 @@
     hole1.lineTo(h1x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     wall4Shape.holes.push(hole1);
     
-    // Hueco 3: Agujero tobogán derecho (400x300 en x=2450)
+    // Hueco 3: Agujero tobogán derecho (400x300 en x=3450, y=1450)
     const hole2 = new THREE.Path();
-    const h2x = 2450 - ROOM_W/2; // Convertir a coordenadas relativas
+    const h2x = 3450 - ROOM_W/2; // +1000mm: 2450 + 1000
     hole2.moveTo(h2x - TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole2.lineTo(h2x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y - TOBOGAN_HOLE_H/2);
     hole2.lineTo(h2x + TOBOGAN_HOLE_W/2, TOBOGAN_HOLE_Y + TOBOGAN_HOLE_H/2);
@@ -234,10 +226,23 @@
       bevelEnabled: false
     };
     const wall4Geom = new THREE.ExtrudeGeometry(wall4Shape, extrudeSettings);
+    
+    // Crear materiales: zócalo abajo (200mm) y pared arriba
+    const materials4 = [
+      wallMat,  // Material lateral
+      wallMat   // Material frontal/trasero
+    ];
     const wall4Panel = new THREE.Mesh(wall4Geom, wallMat);
     wall4Panel.position.set(0, 0, halfL);
     wall4Panel.renderOrder = 999;
     wallGroup.add(wall4Panel);
+    
+    // Agregar zócalo de concreto en la parte baja (0-200mm)
+    const baseboard4Geom = new THREE.BoxGeometry(ROOM_W, BASEBOARD_HEIGHT, WALL_THK);
+    const baseboard4 = new THREE.Mesh(baseboard4Geom, baseboardMat);
+    baseboard4.position.set(0, BASEBOARD_HEIGHT/2, halfL);
+    baseboard4.renderOrder = 998;
+    wallGroup.add(baseboard4);
     
     // Agregar bordes
     const edges4 = new THREE.LineSegments(new THREE.EdgesGeometry(wall4Geom), edgeMat);
