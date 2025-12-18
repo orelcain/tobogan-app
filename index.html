@@ -40,7 +40,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
     <button class="btn" id="btn-guillotina">Abrir guillotina</button>
-    <div class="badge" id="version-badge">v2.6.6</div>
+    <div class="badge" id="version-badge">v2.6.7</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="bin-fill">Bin: 0</div>
@@ -954,50 +954,50 @@
           }
         });
         
-        // ===== HARD COLLIDER DEL BIN (MÁS ESTRICTO) =====
-        // Definir límites ESTRICTOS del bin (centro del pescado debe estar dentro)
-        const fishRadius = fish.userData.collisionRadius || 200;
-        const margin = 30; // Margen extra para evitar atravesar
-        const binLeftStrict = BIN_POS_X - BIN_W/2 + BIN_THK + margin;
-        const binRightStrict = BIN_POS_X + BIN_W/2 - BIN_THK - margin;
-        const binBackStrict = BIN_POS_Z - BIN_L/2 + BIN_THK + margin;
-        const binFrontStrict = BIN_POS_Z + BIN_L/2 - BIN_THK - margin;
-        const binBottom = BIN_THK;
+        // ===== HARD COLLIDER DEL BIN (ULTRA ESTRICTO) =====
+        // Margen GRANDE para que visualmente no atraviesen (considerando tamaño del pescado)
+        const fishSize = 250; // Mitad del largo del pescado
+        const binCenterX = BIN_POS_X;
+        const binCenterZ = BIN_POS_Z;
+        const binHalfW = BIN_W/2 - BIN_THK - fishSize; // Límite interno considerando pescado
+        const binHalfL = BIN_L/2 - BIN_THK - fishSize;
+        const binBottom = BIN_THK + 30;
         const binTop = BIN_H;
         
-        // Área expandida para detectar colisión
-        const detectArea = 150;
-        const nearBinX = fish.position.x > binLeftStrict - detectArea && fish.position.x < binRightStrict + detectArea;
-        const nearBinZ = fish.position.z > binBackStrict - detectArea && fish.position.z < binFrontStrict + detectArea;
-        const nearBin = nearBinX && nearBinZ;
+        // Límites absolutos del bin (el centro del pescado NUNCA puede salir de aquí)
+        const binMinX = binCenterX - binHalfW;
+        const binMaxX = binCenterX + binHalfW;
+        const binMinZ = binCenterZ - binHalfL;
+        const binMaxZ = binCenterZ + binHalfL;
         
-        // Colisión ESTRICTA con paredes del bin
-        if (nearBin && fish.position.y < binTop + 300 && fish.position.y > 0) {
-          // Forzar posición dentro del bin con más fuerza
-          // Pared IZQUIERDA del bin
-          if (fish.position.x < binLeftStrict) {
-            fish.position.x = binLeftStrict + 20;
-            fish.userData.vx = Math.abs(fish.userData.vx) * 0.2 + 2;
+        // Verificar si está en el área del bin
+        const inBinArea = fish.position.y < binTop + 100 && fish.position.y > -50;
+        const nearBinX = fish.position.x > binMinX - 300 && fish.position.x < binMaxX + 300;
+        const nearBinZ = fish.position.z > binMinZ - 300 && fish.position.z < binMaxZ + 300;
+        
+        // FORZAR posición dentro del bin - SIEMPRE
+        if (nearBinX && nearBinZ && inBinArea) {
+          // Clamp posición X
+          if (fish.position.x < binMinX) {
+            fish.position.x = binMinX;
+            fish.userData.vx = Math.abs(fish.userData.vx) * 0.1;
+          } else if (fish.position.x > binMaxX) {
+            fish.position.x = binMaxX;
+            fish.userData.vx = -Math.abs(fish.userData.vx) * 0.1;
           }
-          // Pared DERECHA del bin
-          if (fish.position.x > binRightStrict) {
-            fish.position.x = binRightStrict - 20;
-            fish.userData.vx = -Math.abs(fish.userData.vx) * 0.2 - 2;
-          }
-          // Pared TRASERA del bin
-          if (fish.position.z < binBackStrict) {
-            fish.position.z = binBackStrict + 20;
-            fish.userData.vz = Math.abs(fish.userData.vz) * 0.2 + 2;
-          }
-          // Pared FRONTAL del bin
-          if (fish.position.z > binFrontStrict) {
-            fish.position.z = binFrontStrict - 20;
-            fish.userData.vz = -Math.abs(fish.userData.vz) * 0.2 - 2;
+          
+          // Clamp posición Z
+          if (fish.position.z < binMinZ) {
+            fish.position.z = binMinZ;
+            fish.userData.vz = Math.abs(fish.userData.vz) * 0.1;
+          } else if (fish.position.z > binMaxZ) {
+            fish.position.z = binMaxZ;
+            fish.userData.vz = -Math.abs(fish.userData.vz) * 0.1;
           }
         }
         
         // Si el pescado está POR ENCIMA del bin (rebalsando), puede caer por los lados
-        if (fish.position.y > binTop && nearBin) {
+        if (fish.position.y > binTop && nearBinX && nearBinZ) {
           // Empujar hacia afuera del bin para que rebalse visualmente
           const pushDir = Math.random() > 0.5 ? 1 : -1;
           fish.userData.vx += pushDir * 3;
