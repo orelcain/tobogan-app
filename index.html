@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v1.1.3</div>
+    <div class="badge" id="version-badge">v1.2.0</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.1.3';
+    const APP_VERSION = 'v1.2.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -174,11 +174,15 @@
       wallGroup.add(line);
     }
     
-    // Pared 4 (trasera, +z): paneles de 1m con entrada de 2m a 50cm de pared 1
+    // Pared 4 (trasera, +z): paneles con agujeros para toboganes
     // Entrada: 2000mm ancho x 2000mm alto, comenzando 500mm desde esquina
+    // Agujeros toboganes: 2 huecos de ~600mm ancho x 600mm alto a ~900mm de altura
     const DOOR_HEIGHT = 2000;
+    const TOBOGAN_HOLE_WIDTH = 600;
+    const TOBOGAN_HOLE_HEIGHT = 600;
+    const TOBOGAN_Y = 900;
     
-    // Zócalo pared 4 (sin entrada en la base)
+    // Panel izquierdo extremo: -2000 a -1500 (500mm)
     const baseboard4a = new THREE.Mesh(
       new THREE.BoxGeometry(500, BASEBOARD_HEIGHT, WALL_THK),
       baseboardMat
@@ -186,14 +190,6 @@
     baseboard4a.position.set(-ROOM_W/2 + 250, BASEBOARD_HEIGHT/2, halfL);
     wallGroup.add(baseboard4a);
     
-    const baseboard4b = new THREE.Mesh(
-      new THREE.BoxGeometry(1500, BASEBOARD_HEIGHT, WALL_THK),
-      baseboardMat
-    );
-    baseboard4b.position.set(ROOM_W/2 - 750, BASEBOARD_HEIGHT/2, halfL);
-    wallGroup.add(baseboard4b);
-    
-    // Panel izquierdo: -2000 a -1500 (500mm, altura completa)
     const panel4aGeom = new THREE.BoxGeometry(500, wallH - BASEBOARD_HEIGHT, WALL_THK);
     const panel4a = new THREE.Mesh(panel4aGeom, wallMat);
     panel4a.position.set(-ROOM_W/2 + 250, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, halfL);
@@ -203,21 +199,34 @@
     edges4a.position.copy(panel4a.position);
     wallGroup.add(edges4a);
     
-    // Panel superior sobre la entrada: 2000mm ancho
-    const topPanelHeight = wallH - DOOR_HEIGHT;
-    const panel4topGeom = new THREE.BoxGeometry(2000, topPanelHeight, WALL_THK);
-    const panel4top = new THREE.Mesh(panel4topGeom, wallMat);
-    panel4top.position.set(-500, DOOR_HEIGHT + topPanelHeight/2, halfL);
-    panel4top.renderOrder = 999;
-    wallGroup.add(panel4top);
-    const edges4top = new THREE.LineSegments(new THREE.EdgesGeometry(panel4topGeom), edgeMat);
-    edges4top.position.copy(panel4top.position);
-    wallGroup.add(edges4top);
+    // Panel entre toboganes: -900 a -300 (600mm)
+    const baseboard4mid = new THREE.Mesh(
+      new THREE.BoxGeometry(600, BASEBOARD_HEIGHT, WALL_THK),
+      baseboardMat
+    );
+    baseboard4mid.position.set(0, BASEBOARD_HEIGHT/2, halfL);
+    wallGroup.add(baseboard4mid);
     
-    // Panel derecho: 500 a 2000 (1500mm, altura completa)
-    const panel4bGeom = new THREE.BoxGeometry(1500, wallH - BASEBOARD_HEIGHT, WALL_THK);
+    const panel4midGeom = new THREE.BoxGeometry(600, wallH - BASEBOARD_HEIGHT, WALL_THK);
+    const panel4mid = new THREE.Mesh(panel4midGeom, wallMat);
+    panel4mid.position.set(0, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, halfL);
+    panel4mid.renderOrder = 999;
+    wallGroup.add(panel4mid);
+    const edges4mid = new THREE.LineSegments(new THREE.EdgesGeometry(panel4midGeom), edgeMat);
+    edges4mid.position.copy(panel4mid.position);
+    wallGroup.add(edges4mid);
+    
+    // Panel derecho extremo: 300 a 2000 (1700mm)
+    const baseboard4b = new THREE.Mesh(
+      new THREE.BoxGeometry(1700, BASEBOARD_HEIGHT, WALL_THK),
+      baseboardMat
+    );
+    baseboard4b.position.set(ROOM_W/2 - 850, BASEBOARD_HEIGHT/2, halfL);
+    wallGroup.add(baseboard4b);
+    
+    const panel4bGeom = new THREE.BoxGeometry(1700, wallH - BASEBOARD_HEIGHT, WALL_THK);
     const panel4b = new THREE.Mesh(panel4bGeom, wallMat);
-    panel4b.position.set(ROOM_W/2 - 750, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, halfL);
+    panel4b.position.set(ROOM_W/2 - 850, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, halfL);
     panel4b.renderOrder = 999;
     wallGroup.add(panel4b);
     const edges4b = new THREE.LineSegments(new THREE.EdgesGeometry(panel4bGeom), edgeMat);
@@ -318,14 +327,15 @@
     // Cargar tobogán desde archivo FBX
     const fbxLoader = new FBXLoader();
     fbxLoader.load('tobogan.fbx', (object) => {
-      // Ajustar escala para que coincida con el tamaño de la sala
-      object.scale.set(0.5, 0.5, 0.5);
+      // Ajustar escala para que llegue desde la pared hasta el bin
+      object.scale.set(1.2, 1.2, 1.2);
       
       // Rotar 180 grados
       object.rotation.y = Math.PI;
       
-      // Posicionar a la altura superior del bin (~900mm), movido 1.5m hacia el bin
-      object.position.set(1000, 900, 1200);
+      // Posicionar: parte delantera a altura del bin, parte trasera en pared 4
+      // Pared 4 está en Z = ~1942mm
+      object.position.set(600, 900, 1600);
       
       // Configurar sombras
       object.traverse((child) => {
@@ -336,7 +346,13 @@
       });
       
       scene.add(object);
-      console.log('Tobogán cargado exitosamente');
+      
+      // Duplicar tobogán para el segundo
+      const tobogan2 = object.clone();
+      tobogan2.position.set(-600, 900, 1600);
+      scene.add(tobogan2);
+      
+      console.log('Toboganes cargados exitosamente');
     }, 
     (xhr) => {
       console.log((xhr.loaded / xhr.total * 100) + '% cargado');
