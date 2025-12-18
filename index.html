@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v1.3.2</div>
+    <div class="badge" id="version-badge">v2.5.0</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.4.0';
+    const APP_VERSION = 'v2.5.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -92,11 +92,11 @@
     });
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1220);
+    // Fondo estilo comic - gris cálido suave
+    scene.background = new THREE.Color(0xe8e4de);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 50000);
@@ -111,29 +111,11 @@
       TWO: THREE.TOUCH.DOLLY_PAN
     };
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
-    dir.position.set(2000, 3500, 1500);
-    dir.castShadow = true;
+    // Iluminación suave para estilo comic (sin sombras duras)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.4);
+    dir.position.set(2000, 3000, 2000);
     scene.add(dir);
-    
-    // Luz adicional para reflejos en acero inoxidable
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    fillLight.position.set(-2000, 2000, -1000);
-    scene.add(fillLight);
-    
-    const backLight = new THREE.DirectionalLight(0xaaccff, 0.4);
-    backLight.position.set(0, 1000, -3000);
-    scene.add(backLight);
-    
-    // Environment map para reflejos realistas
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    pmremGenerator.compileEquirectangularShader();
-    
-    // Crear environment map procedural para reflejos
-    const envScene = new THREE.Scene();
-    envScene.background = new THREE.Color(0x87ceeb); // Cielo azul
-    const envTexture = pmremGenerator.fromScene(envScene, 0.04).texture;
 
     const ROOM_W = 4000, ROOM_L = 4000, ROOM_H = 4000, WALL_THK = 115;
     const BIN_W = 1400, BIN_L = 1000, BIN_H = 900, BIN_THK = 35; // BIN_W: 1200 + 200
@@ -203,28 +185,24 @@
     }
     const fishTexture = createFishScalesTexture();
 
-    // Piso estilo SketchUp
+    // ====== ESTILO COMIC/SKETCH - Colores pastel mate ======
+    // Líneas estilo dibujado a mano (gris cálido, no negro puro)
+    const sketchLineMat = new THREE.LineBasicMaterial({ color: 0x5a5550, linewidth: 2 });
+    
+    // Piso - beige cálido mate
     const FLOOR_DEPTH = 500;
     const floorGeom = new THREE.BoxGeometry(5000, FLOOR_DEPTH, 5000);
-    const floorMat = new THREE.MeshBasicMaterial({ color: 0xe8e8e8, side: THREE.DoubleSide });
+    const floorMat = new THREE.MeshBasicMaterial({ color: 0xd4cfc5 });
     const floor = new THREE.Mesh(floorGeom, floorMat);
     floor.position.y = -FLOOR_DEPTH/2;
-    // Wireframe del piso
-    const floorWire = new THREE.LineSegments(
-      new THREE.EdgesGeometry(floorGeom),
-      new THREE.LineBasicMaterial({ color: 0x555555 })
-    );
+    const floorWire = new THREE.LineSegments(new THREE.EdgesGeometry(floorGeom), sketchLineMat);
     floorWire.position.copy(floor.position);
     scene.add(floor);
     scene.add(floorWire);
 
     const wallGroup = new THREE.Group();
-    // Estilo SketchUp: blanco con líneas negras
-    const wallMat = new THREE.MeshBasicMaterial({ 
-      color: 0xfafafa,
-      side: THREE.DoubleSide
-    });
-    const edgeMat = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 1 });
+    // Paredes - blanco crema mate
+    const wallMat = new THREE.MeshBasicMaterial({ color: 0xf5f0e8 });
     const halfW = ROOM_W / 2 - WALL_THK / 2, halfL = ROOM_L / 2 - WALL_THK / 2, wallH = ROOM_H - 100;
     
     const PANEL_WIDTH = 1000;
@@ -234,11 +212,10 @@
       const panelGeom = new THREE.BoxGeometry(PANEL_WIDTH, wallH, WALL_THK);
       const panel = new THREE.Mesh(panelGeom, wallMat);
       panel.position.set(-ROOM_W/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH, wallH/2, -halfL);
-      panel.renderOrder = 999;
       wallGroup.add(panel);
       
       const edges = new THREE.EdgesGeometry(panelGeom);
-      const line = new THREE.LineSegments(edges, edgeMat);
+      const line = new THREE.LineSegments(edges, sketchLineMat);
       line.position.copy(panel.position);
       wallGroup.add(line);
     }
@@ -301,7 +278,7 @@
     wallGroup.add(wall4Panel);
     
     // Agregar bordes
-    const edges4 = new THREE.LineSegments(new THREE.EdgesGeometry(wall4Geom), edgeMat);
+    const edges4 = new THREE.LineSegments(new THREE.EdgesGeometry(wall4Geom), sketchLineMat);
     edges4.position.copy(wall4Panel.position);
     wallGroup.add(edges4);
     
@@ -310,10 +287,9 @@
       const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH);
       const panel = new THREE.Mesh(panelGeom, wallMat);
       panel.position.set(-halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
-      panel.renderOrder = 999;
       wallGroup.add(panel);
       
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(panelGeom), edgeMat);
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(panelGeom), sketchLineMat);
       edges.position.copy(panel.position);
       wallGroup.add(edges);
     }
@@ -323,10 +299,9 @@
       const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH);
       const panel = new THREE.Mesh(panelGeom, wallMat);
       panel.position.set(halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
-      panel.renderOrder = 999;
       wallGroup.add(panel);
       
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(panelGeom), edgeMat);
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(panelGeom), sketchLineMat);
       edges.position.copy(panel.position);
       wallGroup.add(edges);
     }
@@ -335,13 +310,12 @@
     // Labels de paredes eliminados para aspecto profesional
 
     const binGroup = new THREE.Group();
-    // Estilo SketchUp: azul suave con líneas
-    const binMat = new THREE.MeshBasicMaterial({ color: 0x7eb8e8, side: THREE.DoubleSide });
-    const binEdgeMat = new THREE.LineBasicMaterial({ color: 0x2a5a8a });
+    // Bin - azul pastel suave mate
+    const binMat = new THREE.MeshBasicMaterial({ color: 0xa8c8e8 });
     
     const base = new THREE.Mesh(new RoundedBoxGeometry(BIN_W, BIN_THK, BIN_L, 4, BIN_THK*0.5), binMat);
     base.position.y = BIN_THK/2;
-    const baseWire = new THREE.LineSegments(new THREE.EdgesGeometry(base.geometry), binEdgeMat);
+    const baseWire = new THREE.LineSegments(new THREE.EdgesGeometry(base.geometry), sketchLineMat);
     baseWire.position.copy(base.position);
     binGroup.add(base);
     binGroup.add(baseWire);
@@ -357,12 +331,12 @@
     const wB = wF.clone(); wB.position.z = -BIN_L/2 + BIN_THK/2;
     [wL, wR, wF, wB].forEach(w => {
       binGroup.add(w);
-      const wire = new THREE.LineSegments(new THREE.EdgesGeometry(w.geometry), binEdgeMat);
+      const wire = new THREE.LineSegments(new THREE.EdgesGeometry(w.geometry), sketchLineMat);
       wire.position.copy(w.position);
       binGroup.add(wire);
     });
 
-    // ===== PESCADOS GRANDES 50cm x 10cm =====
+    // ===== PESCADOS estilo COMIC =====
     function createRealisticFish(size) {
       const fish = new THREE.Group();
       const s = size || 1;
@@ -371,17 +345,10 @@
       const LENGTH = 500 * s;
       const WIDTH = 100 * s;
       
-      // Material gris plateado
-      const fishMat = new THREE.MeshStandardMaterial({ 
-        color: 0xb8c4d0, 
-        roughness: 0.4,
-        metalness: 0.2
-      });
-      const finMat = new THREE.MeshStandardMaterial({ 
-        color: 0x8899aa, 
-        roughness: 0.5,
-        side: THREE.DoubleSide
-      });
+      // Material estilo comic - gris azulado pastel mate
+      const fishMat = new THREE.MeshBasicMaterial({ color: 0xc5d5e5 });
+      const finMat = new THREE.MeshBasicMaterial({ color: 0x9ab5c8, side: THREE.DoubleSide });
+      const fishLineMat = new THREE.LineBasicMaterial({ color: 0x5a6a7a });
       
       // Cuerpo principal - forma de pez ovalada
       const bodyPoints = [];
@@ -390,13 +357,10 @@
         const y = (t - 0.5) * LENGTH;
         let x;
         if (t < 0.2) {
-          // Cabeza redondeada
           x = Math.sin(t / 0.2 * Math.PI / 2) * WIDTH / 2;
         } else if (t < 0.7) {
-          // Cuerpo grueso
           x = WIDTH / 2 - (t - 0.2) * 15 * s;
         } else {
-          // Cola estrecha
           x = Math.cos((t - 0.7) / 0.3 * Math.PI / 2) * WIDTH / 4;
         }
         bodyPoints.push(new THREE.Vector2(Math.max(x, 5), y));
@@ -404,9 +368,11 @@
       const bodyGeom = new THREE.LatheGeometry(bodyPoints, 16);
       bodyGeom.rotateZ(Math.PI / 2);
       const body = new THREE.Mesh(bodyGeom, fishMat);
+      const bodyWire = new THREE.LineSegments(new THREE.EdgesGeometry(bodyGeom, 25), fishLineMat);
       fish.add(body);
+      fish.add(bodyWire);
       
-      // COLA grande y visible (forma de V bifurcada)
+      // COLA grande estilo comic
       const tailSize = WIDTH * 0.8;
       const tailShape = new THREE.Shape();
       tailShape.moveTo(0, 0);
@@ -419,9 +385,12 @@
       const tailGeom = new THREE.ExtrudeGeometry(tailShape, { depth: 8 * s, bevelEnabled: false });
       const tail = new THREE.Mesh(tailGeom, finMat);
       tail.position.set(-LENGTH / 2 - 10 * s, 0, -4 * s);
+      const tailWire = new THREE.LineSegments(new THREE.EdgesGeometry(tailGeom), fishLineMat);
+      tailWire.position.copy(tail.position);
       fish.add(tail);
+      fish.add(tailWire);
       
-      // Aleta dorsal grande
+      // Aleta dorsal
       const dorsalShape = new THREE.Shape();
       dorsalShape.moveTo(0, 0);
       dorsalShape.quadraticCurveTo(LENGTH * 0.15, WIDTH * 0.5, LENGTH * 0.3, 0);
@@ -431,7 +400,7 @@
       dorsal.rotation.x = Math.PI / 2;
       fish.add(dorsal);
       
-      // Aletas pectorales (ambos lados)
+      // Aletas pectorales
       const pectShape = new THREE.Shape();
       pectShape.moveTo(0, 0);
       pectShape.quadraticCurveTo(WIDTH * 0.3, WIDTH * 0.4, WIDTH * 0.5, WIDTH * 0.15);
@@ -448,9 +417,10 @@
       fish.add(pect2);
       
       // OJOS grandes y visibles
-      const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-      const eyePupilMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-      const eyeSize = WIDTH * 0.12;
+      // OJOS estilo comic (grandes y expresivos)
+      const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const eyePupilMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+      const eyeSize = WIDTH * 0.14;
       
       // Ojo derecho
       const eyeWhite1 = new THREE.Mesh(new THREE.SphereGeometry(eyeSize, 12, 12), eyeWhiteMat);
@@ -468,9 +438,9 @@
       pupil2.position.set(LENGTH * 0.35, WIDTH * 0.18, -WIDTH * 0.42);
       fish.add(pupil2);
       
-      // Boca (línea oscura)
+      // Boca estilo comic
       const mouthGeom = new THREE.TorusGeometry(WIDTH * 0.15, 3 * s, 8, 8, Math.PI);
-      const mouthMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+      const mouthMat = new THREE.MeshBasicMaterial({ color: 0x4a4a4a });
       const mouth = new THREE.Mesh(mouthGeom, mouthMat);
       mouth.position.set(LENGTH * 0.45, -WIDTH * 0.05, 0);
       mouth.rotation.set(Math.PI / 2, 0, Math.PI);
@@ -514,20 +484,20 @@
       // Tobogán derecho (cerca pared 2)
       object.position.set(1550, 900, 1340);
       
-      // Estilo SketchUp: blanco con líneas negras para ver la forma
-      const sketchupMat = new THREE.MeshBasicMaterial({
-        color: 0xf5f5f5,
+      // Estilo Comic: gris claro con líneas sketch
+      const comicToboganMat = new THREE.MeshBasicMaterial({
+        color: 0xd8d0c8,
         side: THREE.DoubleSide
       });
-      const wireframeMat = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 1 });
+      const toboganLineMat = new THREE.LineBasicMaterial({ color: 0x5a5550, linewidth: 2 });
       
       object.traverse((child) => {
         if (child.isMesh) {
-          child.material = sketchupMat;
-          // Agregar wireframe
+          child.material = comicToboganMat;
+          // Agregar wireframe estilo sketch
           const wireframe = new THREE.LineSegments(
             new THREE.EdgesGeometry(child.geometry, 15),
-            wireframeMat
+            toboganLineMat
           );
           child.add(wireframe);
         }
@@ -584,44 +554,51 @@
       document.getElementById('btn-toggle-walls').textContent = wallsVisible ? 'Ocultar paneles' : 'Mostrar paneles';
     });
 
-    // ===== AVATARES estilo Maniquí suave =====
+    // ===== AVATARES estilo Comic/Sketch =====
     function createAvatar(colorTint, name) {
       const avatar = new THREE.Group();
       avatar.name = name;
       
-      // Material suave tipo maniquí (sin wireframe)
-      const avatarMat = new THREE.MeshStandardMaterial({ 
-        color: 0xf5f5f5, 
-        roughness: 0.6,
-        metalness: 0.0
-      });
+      // Material estilo comic (color mate sin iluminación)
+      const avatarMat = new THREE.MeshBasicMaterial({ color: 0xe8dcd0 });
+      const avatarLineMat = new THREE.LineBasicMaterial({ color: 0x6a5a4a, linewidth: 2 });
+      
+      // Función helper para agregar wireframe estilo sketch
+      function addSketchOutline(mesh, parent) {
+        parent.add(mesh);
+        const edges = new THREE.LineSegments(
+          new THREE.EdgesGeometry(mesh.geometry, 20),
+          avatarLineMat
+        );
+        mesh.add(edges);
+      }
       
       // Cabeza ovalada
-      const headGeom = new THREE.SphereGeometry(90, 24, 24);
+      const headGeom = new THREE.SphereGeometry(90, 16, 16);
       const head = new THREE.Mesh(headGeom, avatarMat);
       head.scale.set(0.85, 1.1, 0.9);
       head.position.y = 1650;
-      avatar.add(head);
+      addSketchOutline(head, avatar);
       
       // Cuello
-      const neckGeom = new THREE.CylinderGeometry(40, 50, 80, 16);
+      const neckGeom = new THREE.CylinderGeometry(40, 50, 80, 12);
       const neck = new THREE.Mesh(neckGeom, avatarMat);
       neck.position.y = 1520;
-      avatar.add(neck);
+      addSketchOutline(neck, avatar);
       
       // Torso (forma más orgánica)
-      const torsoGeom = new THREE.CylinderGeometry(85, 95, 400, 20);
+      const torsoGeom = new THREE.CylinderGeometry(85, 95, 400, 16);
       const torso = new THREE.Mesh(torsoGeom, avatarMat);
       torso.position.y = 1280;
-      avatar.add(torso);
+      addSketchOutline(torso, avatar);
       
       // Caderas
-      const hipsGeom = new THREE.SphereGeometry(100, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+      const hipsGeom = new THREE.SphereGeometry(100, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
       const hips = new THREE.Mesh(hipsGeom, avatarMat);
       hips.scale.set(1, 0.5, 0.8);
       hips.position.y = 1050;
       hips.rotation.x = Math.PI;
-      avatar.add(hips);
+      addSketchOutline(hips, avatar);
       
       // Brazos articulados para animación
       avatar.leftArm = new THREE.Group();
@@ -630,34 +607,34 @@
       avatar.rightForearm = new THREE.Group();
       
       // Hombros redondeados
-      const shoulderGeom = new THREE.SphereGeometry(45, 12, 12);
+      const shoulderGeom = new THREE.SphereGeometry(45, 10, 10);
       const leftShoulder = new THREE.Mesh(shoulderGeom, avatarMat);
       leftShoulder.position.set(-120, 1450, 0);
-      avatar.add(leftShoulder);
+      addSketchOutline(leftShoulder, avatar);
       const rightShoulder = new THREE.Mesh(shoulderGeom, avatarMat);
       rightShoulder.position.set(120, 1450, 0);
-      avatar.add(rightShoulder);
+      addSketchOutline(rightShoulder, avatar);
       
       // Brazo superior (cápsula suave)
-      const upperArmGeom = new THREE.CapsuleGeometry(28, 180, 8, 16);
-      const forearmGeom = new THREE.CapsuleGeometry(24, 160, 8, 16);
-      const handGeom = new THREE.SphereGeometry(30, 12, 12);
+      const upperArmGeom = new THREE.CapsuleGeometry(28, 180, 6, 12);
+      const forearmGeom = new THREE.CapsuleGeometry(24, 160, 6, 12);
+      const handGeom = new THREE.SphereGeometry(30, 10, 10);
       
       // Brazo izquierdo
       const leftUpper = new THREE.Mesh(upperArmGeom, avatarMat);
       leftUpper.position.y = -100;
-      avatar.leftArm.add(leftUpper);
+      addSketchOutline(leftUpper, avatar.leftArm);
       
-      const leftElbow = new THREE.Mesh(new THREE.SphereGeometry(28, 10, 10), avatarMat);
+      const leftElbow = new THREE.Mesh(new THREE.SphereGeometry(28, 8, 8), avatarMat);
       leftElbow.position.y = -200;
-      avatar.leftArm.add(leftElbow);
+      addSketchOutline(leftElbow, avatar.leftArm);
       
       const leftFore = new THREE.Mesh(forearmGeom, avatarMat);
       leftFore.position.y = -90;
-      avatar.leftForearm.add(leftFore);
+      addSketchOutline(leftFore, avatar.leftForearm);
       const leftHand = new THREE.Mesh(handGeom, avatarMat);
       leftHand.position.y = -190;
-      avatar.leftForearm.add(leftHand);
+      addSketchOutline(leftHand, avatar.leftForearm);
       avatar.leftForearm.position.y = -200;
       avatar.leftArm.add(avatar.leftForearm);
       avatar.leftArm.position.set(-120, 1450, 0);
@@ -666,59 +643,59 @@
       // Brazo derecho
       const rightUpper = new THREE.Mesh(upperArmGeom, avatarMat);
       rightUpper.position.y = -100;
-      avatar.rightArm.add(rightUpper);
+      addSketchOutline(rightUpper, avatar.rightArm);
       
-      const rightElbow = new THREE.Mesh(new THREE.SphereGeometry(28, 10, 10), avatarMat);
+      const rightElbow = new THREE.Mesh(new THREE.SphereGeometry(28, 8, 8), avatarMat);
       rightElbow.position.y = -200;
-      avatar.rightArm.add(rightElbow);
+      addSketchOutline(rightElbow, avatar.rightArm);
       
       const rightFore = new THREE.Mesh(forearmGeom, avatarMat);
       rightFore.position.y = -90;
-      avatar.rightForearm.add(rightFore);
+      addSketchOutline(rightFore, avatar.rightForearm);
       const rightHand = new THREE.Mesh(handGeom, avatarMat);
       rightHand.position.y = -190;
-      avatar.rightForearm.add(rightHand);
+      addSketchOutline(rightHand, avatar.rightForearm);
       avatar.rightForearm.position.y = -200;
       avatar.rightArm.add(avatar.rightForearm);
       avatar.rightArm.position.set(120, 1450, 0);
       avatar.add(avatar.rightArm);
       
       // Piernas (forma orgánica)
-      const thighGeom = new THREE.CapsuleGeometry(45, 280, 8, 16);
-      const calfGeom = new THREE.CapsuleGeometry(38, 260, 8, 16);
+      const thighGeom = new THREE.CapsuleGeometry(45, 280, 6, 12);
+      const calfGeom = new THREE.CapsuleGeometry(38, 260, 6, 12);
       
       // Pierna izquierda
       const leftThigh = new THREE.Mesh(thighGeom, avatarMat);
       leftThigh.position.set(-55, 850, 0);
-      avatar.add(leftThigh);
-      const leftKnee = new THREE.Mesh(new THREE.SphereGeometry(40, 10, 10), avatarMat);
+      addSketchOutline(leftThigh, avatar);
+      const leftKnee = new THREE.Mesh(new THREE.SphereGeometry(40, 8, 8), avatarMat);
       leftKnee.position.set(-55, 680, 0);
-      avatar.add(leftKnee);
+      addSketchOutline(leftKnee, avatar);
       const leftCalf = new THREE.Mesh(calfGeom, avatarMat);
       leftCalf.position.set(-55, 510, 0);
-      avatar.add(leftCalf);
+      addSketchOutline(leftCalf, avatar);
       
       // Pierna derecha
       const rightThigh = new THREE.Mesh(thighGeom, avatarMat);
       rightThigh.position.set(55, 850, 0);
-      avatar.add(rightThigh);
-      const rightKnee = new THREE.Mesh(new THREE.SphereGeometry(40, 10, 10), avatarMat);
+      addSketchOutline(rightThigh, avatar);
+      const rightKnee = new THREE.Mesh(new THREE.SphereGeometry(40, 8, 8), avatarMat);
       rightKnee.position.set(55, 680, 0);
-      avatar.add(rightKnee);
+      addSketchOutline(rightKnee, avatar);
       const rightCalf = new THREE.Mesh(calfGeom, avatarMat);
       rightCalf.position.set(55, 510, 0);
-      avatar.add(rightCalf);
+      addSketchOutline(rightCalf, avatar);
       
       // Pies redondeados
-      const footGeom = new THREE.CapsuleGeometry(35, 80, 8, 12);
+      const footGeom = new THREE.CapsuleGeometry(35, 80, 6, 10);
       const leftFoot = new THREE.Mesh(footGeom, avatarMat);
       leftFoot.rotation.x = Math.PI / 2;
       leftFoot.position.set(-55, 340, 30);
-      avatar.add(leftFoot);
+      addSketchOutline(leftFoot, avatar);
       const rightFoot = new THREE.Mesh(footGeom, avatarMat);
       rightFoot.rotation.x = Math.PI / 2;
       rightFoot.position.set(55, 340, 30);
-      avatar.add(rightFoot);
+      addSketchOutline(rightFoot, avatar);
       
       // Pescado que sostiene (más grande)
       avatar.heldFish = createRealisticFish(0.7);
