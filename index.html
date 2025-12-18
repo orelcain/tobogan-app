@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v1.0.3</div>
+    <div class="badge" id="version-badge">v1.1.0</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -56,8 +56,9 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.0.3';
+    const APP_VERSION = 'v1.1.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -313,6 +314,33 @@
     binGroup.position.set(BIN_POS_X, 0, BIN_POS_Z);
     binGroup.renderOrder = 1;
     scene.add(binGroup);
+
+    // Cargar tobogán desde archivo FBX
+    const fbxLoader = new FBXLoader();
+    fbxLoader.load('tobogan.fbx', (object) => {
+      // Ajustar escala si es necesario (SketchUp suele exportar en pulgadas)
+      object.scale.set(25.4, 25.4, 25.4); // Convertir pulgadas a mm
+      
+      // Posicionar el tobogán
+      object.position.set(0, 0, 0);
+      
+      // Configurar sombras
+      object.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      
+      scene.add(object);
+      console.log('Tobogán cargado exitosamente');
+    }, 
+    (xhr) => {
+      console.log((xhr.loaded / xhr.total * 100) + '% cargado');
+    },
+    (error) => {
+      console.error('Error cargando tobogán:', error);
+    });
 
     // Vista inicial: isométrica izquierda (Vista A)
     camera.position.set(-7800, 10920, 7800);
