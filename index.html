@@ -40,7 +40,7 @@
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
     <button class="btn" id="btn-guillotina">Abrir guillotina</button>
-    <div class="badge" id="version-badge">v2.6.3</div>
+    <div class="badge" id="version-badge">v2.6.4</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="bin-fill">Bin: 0</div>
@@ -64,7 +64,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.6.3';
+    const APP_VERSION = 'v2.6.4';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -587,10 +587,10 @@
     
     // Control de guillotina con botón
     let guillotinaAbierta = false;
-    let guillotinaTarget = 0; // Posición objetivo (0 = cerrada, 200 = abierta)
+    let guillotinaTarget = 0; // Posición objetivo (0 = cerrada, 240 = abierta)
     document.getElementById('btn-guillotina').addEventListener('click', () => {
       guillotinaAbierta = !guillotinaAbierta;
-      guillotinaTarget = guillotinaAbierta ? 200 : 0;
+      guillotinaTarget = guillotinaAbierta ? 240 : 0; // +20% más de apertura
       document.getElementById('btn-guillotina').textContent = guillotinaAbierta ? 'Cerrar guillotina' : 'Abrir guillotina';
     });
 
@@ -782,7 +782,9 @@
           x: (Math.random() - 0.5) * 0.1,
           y: (Math.random() - 0.5) * 0.1,
           z: (Math.random() - 0.5) * 0.08
-        }
+        },
+        // Radio de colisión considerando cola (500*0.8 = 400mm largo total)
+        collisionRadius: 250 // Radio que cubre cuerpo + cola
       };
       scene.add(fish);
       fallingFish.push(fish);
@@ -954,38 +956,39 @@
         
         // ===== HARD COLLIDER DEL BIN =====
         // Definir límites exactos del bin (paredes internas)
-        const binLeft = BIN_POS_X - BIN_W/2 + BIN_THK;
-        const binRight = BIN_POS_X + BIN_W/2 - BIN_THK;
-        const binBack = BIN_POS_Z - BIN_L/2 + BIN_THK;
-        const binFront = BIN_POS_Z + BIN_L/2 - BIN_THK;
+        const fishRadius = fish.userData.collisionRadius || 200; // Radio de colisión del pescado
+        const binLeft = BIN_POS_X - BIN_W/2 + BIN_THK + fishRadius;
+        const binRight = BIN_POS_X + BIN_W/2 - BIN_THK - fishRadius;
+        const binBack = BIN_POS_Z - BIN_L/2 + BIN_THK + fishRadius;
+        const binFront = BIN_POS_Z + BIN_L/2 - BIN_THK - fishRadius;
         const binBottom = BIN_THK;
         const binTop = BIN_H;
         
         // Verificar si el pescado está en el área del bin (X y Z)
-        const inBinX = fish.position.x > binLeft - 100 && fish.position.x < binRight + 100;
-        const inBinZ = fish.position.z > binBack - 100 && fish.position.z < binFront + 100;
+        const inBinX = fish.position.x > binLeft - fishRadius - 50 && fish.position.x < binRight + fishRadius + 50;
+        const inBinZ = fish.position.z > binBack - fishRadius - 50 && fish.position.z < binFront + fishRadius + 50;
         const inBinArea = inBinX && inBinZ;
         
-        // Colisión con paredes del bin (solo si está cerca del bin)
+        // Colisión con paredes del bin (usando radio del pescado)
         if (inBinArea && fish.position.y < binTop + 200) {
           // Pared IZQUIERDA del bin
           if (fish.position.x < binLeft) {
-            fish.position.x = binLeft + 5;
+            fish.position.x = binLeft + 10;
             fish.userData.vx = Math.abs(fish.userData.vx) * 0.3;
           }
           // Pared DERECHA del bin
           if (fish.position.x > binRight) {
-            fish.position.x = binRight - 5;
+            fish.position.x = binRight - 10;
             fish.userData.vx = -Math.abs(fish.userData.vx) * 0.3;
           }
           // Pared TRASERA del bin
           if (fish.position.z < binBack) {
-            fish.position.z = binBack + 5;
+            fish.position.z = binBack + 10;
             fish.userData.vz = Math.abs(fish.userData.vz) * 0.3;
           }
           // Pared FRONTAL del bin
           if (fish.position.z > binFront) {
-            fish.position.z = binFront - 5;
+            fish.position.z = binFront - 10;
             fish.userData.vz = -Math.abs(fish.userData.vz) * 0.3;
           }
         }
