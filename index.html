@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v0.9.4</div>
+    <div class="badge" id="version-badge">v1.0.0</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -57,7 +57,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v0.9.4';
+    const APP_VERSION = 'v1.0.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -121,8 +121,16 @@
     const BIN_POS_X = ROOM_W/2 - WALL_THK - BIN_W/2 - 100;
     const BIN_POS_Z = ROOM_L/2 - WALL_THK - BIN_L/2 - 700;
 
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
-    floor.rotation.x = -Math.PI / 2;
+    // Piso de concreto con 50cm de profundidad
+    const FLOOR_DEPTH = 500;
+    const floorGeom = new THREE.BoxGeometry(5000, FLOOR_DEPTH, 5000);
+    const floorMat = new THREE.MeshStandardMaterial({ 
+      color: 0x5a5a5a, 
+      roughness: 0.9,
+      metalness: 0.1
+    });
+    const floor = new THREE.Mesh(floorGeom, floorMat);
+    floor.position.y = -FLOOR_DEPTH/2;
     floor.receiveShadow = true;
     scene.add(floor);
 
@@ -130,23 +138,30 @@
     const wallMat = new THREE.MeshPhysicalMaterial({ 
       color: 0x9fb8d6, 
       transparent: true, 
-      opacity: 0.6, 
-      transmission: 0.4,
+      opacity: 0.75, 
+      transmission: 0.2,
       roughness: 0.2,
       metalness: 0.0,
       side: THREE.DoubleSide,
       depthWrite: false
     });
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x4a6b8a, linewidth: 2 });
     const halfW = ROOM_W / 2 - WALL_THK / 2, halfL = ROOM_L / 2 - WALL_THK / 2, wallH = ROOM_H - 100;
     
     const PANEL_WIDTH = 1000;
     
-    // Pared 3 (frontal, -z): paneles de 1m
+    // Pared 3 (frontal, -z): paneles de 1m con bordes
     for (let i = 0; i < 4; i++) {
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(PANEL_WIDTH, wallH, WALL_THK), wallMat);
+      const panelGeom = new THREE.BoxGeometry(PANEL_WIDTH, wallH, WALL_THK);
+      const panel = new THREE.Mesh(panelGeom, wallMat);
       panel.position.set(-ROOM_W/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH, wallH/2, -halfL);
       panel.renderOrder = 999;
       wallGroup.add(panel);
+      
+      const edges = new THREE.EdgesGeometry(panelGeom);
+      const line = new THREE.LineSegments(edges, edgeMat);
+      line.position.copy(panel.position);
+      wallGroup.add(line);
     }
     
     // Pared 4 (trasera, +z): paneles de 1m con entrada de 2m a 50cm de pared 1
@@ -154,38 +169,60 @@
     const DOOR_HEIGHT = 2000;
     
     // Panel izquierdo: -2000 a -1500 (500mm, altura completa)
-    const panel4a = new THREE.Mesh(new THREE.BoxGeometry(500, wallH, WALL_THK), wallMat);
+    const panel4aGeom = new THREE.BoxGeometry(500, wallH, WALL_THK);
+    const panel4a = new THREE.Mesh(panel4aGeom, wallMat);
     panel4a.position.set(-ROOM_W/2 + 250, wallH/2, halfL);
     panel4a.renderOrder = 999;
     wallGroup.add(panel4a);
+    const edges4a = new THREE.LineSegments(new THREE.EdgesGeometry(panel4aGeom), edgeMat);
+    edges4a.position.copy(panel4a.position);
+    wallGroup.add(edges4a);
     
     // Panel superior sobre la entrada: 2000mm ancho
     const topPanelHeight = wallH - DOOR_HEIGHT;
-    const panel4top = new THREE.Mesh(new THREE.BoxGeometry(2000, topPanelHeight, WALL_THK), wallMat);
+    const panel4topGeom = new THREE.BoxGeometry(2000, topPanelHeight, WALL_THK);
+    const panel4top = new THREE.Mesh(panel4topGeom, wallMat);
     panel4top.position.set(-500, DOOR_HEIGHT + topPanelHeight/2, halfL);
     panel4top.renderOrder = 999;
     wallGroup.add(panel4top);
+    const edges4top = new THREE.LineSegments(new THREE.EdgesGeometry(panel4topGeom), edgeMat);
+    edges4top.position.copy(panel4top.position);
+    wallGroup.add(edges4top);
     
     // Panel derecho: 500 a 2000 (1500mm, altura completa)
-    const panel4b = new THREE.Mesh(new THREE.BoxGeometry(1500, wallH, WALL_THK), wallMat);
+    const panel4bGeom = new THREE.BoxGeometry(1500, wallH, WALL_THK);
+    const panel4b = new THREE.Mesh(panel4bGeom, wallMat);
     panel4b.position.set(ROOM_W/2 - 750, wallH/2, halfL);
     panel4b.renderOrder = 999;
     wallGroup.add(panel4b);
+    const edges4b = new THREE.LineSegments(new THREE.EdgesGeometry(panel4bGeom), edgeMat);
+    edges4b.position.copy(panel4b.position);
+    wallGroup.add(edges4b);
     
-    // Pared 1 (izquierda, -x): paneles de 1m
+    // Pared 1 (izquierda, -x): paneles de 1m con bordes
     for (let i = 0; i < 4; i++) {
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH), wallMat);
+      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH);
+      const panel = new THREE.Mesh(panelGeom, wallMat);
       panel.position.set(-halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
       panel.renderOrder = 999;
       wallGroup.add(panel);
+      
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(panelGeom), edgeMat);
+      edges.position.copy(panel.position);
+      wallGroup.add(edges);
     }
     
-    // Pared 2 (derecha, +x): paneles de 1m
+    // Pared 2 (derecha, +x): paneles de 1m con bordes
     for (let i = 0; i < 4; i++) {
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH), wallMat);
+      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH);
+      const panel = new THREE.Mesh(panelGeom, wallMat);
       panel.position.set(halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
       panel.renderOrder = 999;
       wallGroup.add(panel);
+      
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(panelGeom), edgeMat);
+      edges.position.copy(panel.position);
+      wallGroup.add(edges);
     }
     scene.add(wallGroup);
 
