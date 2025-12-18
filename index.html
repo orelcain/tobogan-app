@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v1.1.0</div>
+    <div class="badge" id="version-badge">v1.1.1</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.1.0';
+    const APP_VERSION = 'v1.1.1';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -318,11 +318,11 @@
     // Cargar tobogán desde archivo FBX
     const fbxLoader = new FBXLoader();
     fbxLoader.load('tobogan.fbx', (object) => {
-      // Ajustar escala si es necesario (SketchUp suele exportar en pulgadas)
-      object.scale.set(25.4, 25.4, 25.4); // Convertir pulgadas a mm
+      // Ajustar escala para que coincida con el tamaño de la sala
+      object.scale.set(0.5, 0.5, 0.5);
       
-      // Posicionar el tobogán
-      object.position.set(0, 0, 0);
+      // Posicionar el tobogán cerca del bin y pared 4
+      object.position.set(-500, 0, 1200);
       
       // Configurar sombras
       object.traverse((child) => {
