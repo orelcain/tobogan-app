@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v1.0.1</div>
+    <div class="badge" id="version-badge">v1.0.2</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -57,7 +57,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v1.0.1';
+    const APP_VERSION = 'v1.0.2';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -125,7 +125,7 @@
     const FLOOR_DEPTH = 500;
     const floorGeom = new THREE.BoxGeometry(5000, FLOOR_DEPTH, 5000);
     const floorMat = new THREE.MeshStandardMaterial({ 
-      color: 0x5a5a5a, 
+      color: 0x808080, 
       roughness: 0.9,
       metalness: 0.1
     });
@@ -150,7 +150,7 @@
     
     const PANEL_WIDTH = 1000;
     const BASEBOARD_HEIGHT = 200; // Zócalo de 20cm
-    const baseboardMat = new THREE.MeshStandardMaterial({ color: 0x5a5a5a, roughness: 0.9 });
+    const baseboardMat = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.9 });
     
     // Pared 3 (frontal, -z): paneles de 1m con bordes + zócalo
     const baseboard3 = new THREE.Mesh(
