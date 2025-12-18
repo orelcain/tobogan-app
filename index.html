@@ -35,6 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
+    <button class="btn" id="btn-guillotina">Abrir guillotina</button>
     <div class="badge" id="version-badge">v2.5.0</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
@@ -549,11 +550,11 @@
     controls.target.set(0, 0, 0);
     controls.update();
 
-    // 3 vistas principales con zoom out optimizado
+    // 3 vistas principales
     const cameraViews = {
-      'A': { pos: [-7800, 10920, 7800], target: [0, 0, 0], desc: 'Isométrica izquierda' },
-      'B': { pos: [0, 9360, 10920], target: [0, 500, 0], desc: 'Frontal elevada' },
-      'C': { pos: [8580, 8580, 8580], target: [0, 1000, 0], desc: 'Diagonal clásica' }
+      'A': { pos: [-7800, 10920, 7800], target: [0, 0, 0], desc: 'Isométrica general' },
+      'B': { pos: [-1500, 1800, -800], target: [800, 800, 1500], desc: 'Desde dentro: bin y toboganes' },
+      'C': { pos: [1200, 2200, 3500], target: [1200, 1400, 2000], desc: 'Zoom avatares metiendo salmones' }
     };
 
     function setView(viewNum) {
@@ -577,6 +578,15 @@
       wallsVisible = !wallsVisible;
       wallGroup.visible = wallsVisible;
       document.getElementById('btn-toggle-walls').textContent = wallsVisible ? 'Ocultar paneles' : 'Mostrar paneles';
+    });
+    
+    // Control de guillotina con botón
+    let guillotinaAbierta = false;
+    let guillotinaTarget = 0; // Posición objetivo (0 = cerrada, 200 = abierta)
+    document.getElementById('btn-guillotina').addEventListener('click', () => {
+      guillotinaAbierta = !guillotinaAbierta;
+      guillotinaTarget = guillotinaAbierta ? 200 : 0;
+      document.getElementById('btn-guillotina').textContent = guillotinaAbierta ? 'Cerrar guillotina' : 'Abrir guillotina';
     });
 
     // ===== AVATARES estilo Comic/Sketch =====
@@ -832,12 +842,16 @@
       
       animTime += 0.016;
       
-      // Animar guillotinas (subir y bajar)
+      // Animar guillotinas (controlado por botón, movimiento suave)
       if (guillotinas.length > 0) {
-        const guillotinaOffset = Math.sin(animTime * 2) * 150; // Sube y baja 150 unidades
         guillotinas.forEach(g => {
           if (g.userData.originalY !== undefined) {
-            g.position.y = g.userData.originalY + guillotinaOffset;
+            const currentOffset = g.position.y - g.userData.originalY;
+            const diff = guillotinaTarget - currentOffset;
+            // Movimiento suave hacia el objetivo
+            if (Math.abs(diff) > 1) {
+              g.position.y += diff * 0.05;
+            }
           }
         });
       }
