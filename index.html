@@ -870,12 +870,25 @@
         lastSpawn2 = Math.floor((animTime + CYCLE_DURATION/2) / CYCLE_DURATION);
       }
       
-      // Física de pescados cayendo con colisión del bin
+      // Física de pescados cayendo con colisión del bin, tobogán y guillotina
       const binMinX = BIN_POS_X - BIN_W/2 + 50;
       const binMaxX = BIN_POS_X + BIN_W/2 - 50;
       const binMinZ = BIN_POS_Z - BIN_L/2 + 50;
       const binMaxZ = BIN_POS_Z + BIN_L/2 - 50;
       const binFloorY = 50;
+      
+      // Parámetros del tobogán (aproximado como rampa inclinada)
+      // Tobogán 1: x=1550, Tobogán 2: x=950, ambos z de ~1340 a ~800
+      const toboganWidth = 300; // Ancho del canal
+      const toboganZStart = 1800; // Cerca de pared 4
+      const toboganZEnd = 600; // Donde termina sobre el bin
+      const toboganYStart = 1400; // Altura en pared
+      const toboganYEnd = 700; // Altura sobre bin
+      
+      // Altura de guillotina actual (0 = cerrada, 200 = abierta)
+      const guillotinaAltura = guillotinaTarget;
+      const guillotinaY = 1400; // Posición Y de la guillotina
+      const guillotinaZone = 1750; // Zona Z donde está la guillotina
       
       for (let i = fallingFish.length - 1; i >= 0; i--) {
         const fish = fallingFish[i];
@@ -887,6 +900,49 @@
         fish.position.x += fish.userData.vx;
         fish.position.y += fish.userData.vy;
         fish.position.z += fish.userData.vz;
+        
+        // ===== COLISIÓN CON GUILLOTINA =====
+        // Si está cerrada o parcialmente cerrada, bloquea pescados
+        if (guillotinaAltura < 150) {
+          // Para ambos toboganes (x=1550 y x=950)
+          [h1x, h2x].forEach(toboX => {
+            const inXRange = Math.abs(fish.position.x - toboX) < toboganWidth/2;
+            const inZRange = fish.position.z > guillotinaZone - 50 && fish.position.z < guillotinaZone + 50;
+            const inYRange = fish.position.y < guillotinaY + guillotinaAltura && fish.position.y > guillotinaY - 200;
+            
+            if (inXRange && inZRange && inYRange) {
+              // Bloquear - empujar hacia atrás
+              fish.position.z = guillotinaZone + 60;
+              fish.userData.vz *= -0.3;
+              fish.userData.vy *= 0.5;
+            }
+          });
+        }
+        
+        // ===== COLISIÓN CON TOBOGÁN (rampa inclinada) =====
+        [h1x, h2x].forEach(toboX => {
+          const inXRange = Math.abs(fish.position.x - toboX) < toboganWidth/2;
+          const inZRange = fish.position.z > toboganZEnd && fish.position.z < toboganZStart;
+          
+          if (inXRange && inZRange) {
+            // Calcular altura del tobogán en esta posición Z
+            const t = (fish.position.z - toboganZEnd) / (toboganZStart - toboganZEnd);
+            const toboganYAtZ = toboganYEnd + t * (toboganYStart - toboganYEnd);
+            
+            // Si el pescado está sobre o atravesando el tobogán
+            if (fish.position.y < toboganYAtZ + 50 && fish.position.y > toboganYAtZ - 100) {
+              // Colocar sobre el tobogán
+              fish.position.y = toboganYAtZ + 30;
+              // Deslizar hacia abajo (hacia el bin)
+              fish.userData.vz = -15; // Velocidad hacia adelante
+              fish.userData.vy = -5; // Velocidad hacia abajo (siguiendo la pendiente)
+              fish.userData.vx *= 0.5; // Reducir movimiento lateral
+              // Reducir rotación
+              fish.userData.rotSpeed.x *= 0.7;
+              fish.userData.rotSpeed.z *= 0.7;
+            }
+          }
+        });
         
         // Colisión con paredes del bin
         if (fish.position.y < BIN_H && fish.position.y > binFloorY) {
