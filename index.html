@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v2.0.0';
+    const APP_VERSION = 'v2.1.0';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -111,11 +111,29 @@
       TWO: THREE.TOUCH.DOLLY_PAN
     };
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.1);
-    dir.position.set(2000, 2500, 1200);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+    dir.position.set(2000, 3500, 1500);
     dir.castShadow = true;
     scene.add(dir);
+    
+    // Luz adicional para reflejos en acero inoxidable
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    fillLight.position.set(-2000, 2000, -1000);
+    scene.add(fillLight);
+    
+    const backLight = new THREE.DirectionalLight(0xaaccff, 0.4);
+    backLight.position.set(0, 1000, -3000);
+    scene.add(backLight);
+    
+    // Environment map para reflejos realistas
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    
+    // Crear environment map procedural para reflejos
+    const envScene = new THREE.Scene();
+    envScene.background = new THREE.Color(0x87ceeb); // Cielo azul
+    const envTexture = pmremGenerator.fromScene(envScene, 0.04).texture;
 
     const ROOM_W = 4000, ROOM_L = 4000, ROOM_H = 4000, WALL_THK = 115;
     const BIN_W = 1400, BIN_L = 1000, BIN_H = 900, BIN_THK = 35; // BIN_W: 1200 + 200
@@ -468,15 +486,16 @@
       // Tobogán derecho (cerca pared 2)
       object.position.set(1550, 900, 1340);
       
-      // Aplicar material acero inoxidable brillante REAL (sin textura externa)
+      // Aplicar material acero inoxidable brillante REAL con envMap
       const stainlessSteelMat = new THREE.MeshPhysicalMaterial({
-        color: 0xe8e8e8,
-        metalness: 0.95,
-        roughness: 0.08,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.1,
+        color: 0xdcdcdc,
+        metalness: 1.0,
+        roughness: 0.15,
+        clearcoat: 0.8,
+        clearcoatRoughness: 0.2,
         reflectivity: 1.0,
-        envMapIntensity: 1.5
+        envMap: envTexture,
+        envMapIntensity: 2.5
       });
       
       object.traverse((child) => {
@@ -538,190 +557,303 @@
       document.getElementById('btn-toggle-walls').textContent = wallsVisible ? 'Ocultar paneles' : 'Mostrar paneles';
     });
 
-    // ===== AVATARES ANIMADOS =====
-    // Crear avatar humanoide estilizado
-    function createAvatar(color) {
+    // ===== AVATARES ANIMADOS PROFESIONALES =====
+    function createAvatar(color, name) {
       const avatar = new THREE.Group();
+      avatar.name = name;
       
-      // Material para piel
-      const skinMat = new THREE.MeshStandardMaterial({ color: 0xdeb887, roughness: 0.8 });
-      // Material para ropa
-      const clothMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
-      // Material para botas
-      const bootMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.9 });
+      // Materiales mejorados
+      const skinMat = new THREE.MeshStandardMaterial({ 
+        color: 0xe0b090, 
+        roughness: 0.6,
+        metalness: 0.1
+      });
+      const clothMat = new THREE.MeshStandardMaterial({ 
+        color: color, 
+        roughness: 0.5,
+        metalness: 0.1
+      });
+      const pantsMat = new THREE.MeshStandardMaterial({ 
+        color: 0x2d3748, 
+        roughness: 0.7
+      });
+      const bootMat = new THREE.MeshStandardMaterial({ 
+        color: 0x1a1a1a, 
+        roughness: 0.8,
+        metalness: 0.2
+      });
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.9 });
       
-      // Cabeza
-      const headGeom = new THREE.SphereGeometry(80, 16, 16);
+      // Cabeza más detallada
+      const headGeom = new THREE.SphereGeometry(85, 24, 24);
       const head = new THREE.Mesh(headGeom, skinMat);
-      head.position.y = 1600;
+      head.position.y = 1620;
+      head.scale.set(1, 1.1, 1);
       avatar.add(head);
       
-      // Ojos
-      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-      const eyeGeom = new THREE.SphereGeometry(12, 8, 8);
-      const eye1 = new THREE.Mesh(eyeGeom, eyeMat);
-      eye1.position.set(30, 1620, 60);
-      avatar.add(eye1);
-      const eye2 = eye1.clone();
-      eye2.position.x = -30;
-      avatar.add(eye2);
+      // Pelo
+      const hairGeom = new THREE.SphereGeometry(90, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+      const hair = new THREE.Mesh(hairGeom, hairMat);
+      hair.position.y = 1640;
+      avatar.add(hair);
       
-      // Cuerpo/Torso
-      const torsoGeom = new THREE.CylinderGeometry(100, 120, 450, 16);
+      // Ojos con brillo
+      const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x2d1810, metalness: 0.5 });
+      const eyeGeom = new THREE.SphereGeometry(15, 12, 12);
+      const pupilGeom = new THREE.SphereGeometry(8, 8, 8);
+      
+      [-30, 30].forEach(x => {
+        const eyeWhite = new THREE.Mesh(eyeGeom, eyeWhiteMat);
+        eyeWhite.position.set(x, 1640, 70);
+        avatar.add(eyeWhite);
+        const pupil = new THREE.Mesh(pupilGeom, eyeMat);
+        pupil.position.set(x, 1640, 80);
+        avatar.add(pupil);
+      });
+      
+      // Nariz
+      const noseGeom = new THREE.ConeGeometry(12, 25, 8);
+      const nose = new THREE.Mesh(noseGeom, skinMat);
+      nose.rotation.x = -Math.PI / 2;
+      nose.position.set(0, 1610, 85);
+      avatar.add(nose);
+      
+      // Cuerpo/Torso (chaleco de trabajo)
+      const torsoGeom = new THREE.CylinderGeometry(90, 110, 400, 16);
       const torso = new THREE.Mesh(torsoGeom, clothMat);
-      torso.position.y = 1250;
+      torso.position.y = 1300;
       avatar.add(torso);
       
-      // Brazos (grupos para animación)
+      // Cinturón
+      const beltGeom = new THREE.CylinderGeometry(112, 112, 40, 16);
+      const beltMat = new THREE.MeshStandardMaterial({ color: 0x4a3728, roughness: 0.6 });
+      const belt = new THREE.Mesh(beltGeom, beltMat);
+      belt.position.y = 1080;
+      avatar.add(belt);
+      
+      // Brazos articulados para animación
       avatar.leftArm = new THREE.Group();
       avatar.rightArm = new THREE.Group();
+      avatar.leftForearm = new THREE.Group();
+      avatar.rightForearm = new THREE.Group();
       
-      const armGeom = new THREE.CylinderGeometry(30, 35, 350, 12);
-      const forearmGeom = new THREE.CylinderGeometry(25, 30, 300, 12);
-      const handGeom = new THREE.SphereGeometry(35, 12, 12);
+      const upperArmGeom = new THREE.CylinderGeometry(32, 28, 220, 12);
+      const forearmGeom = new THREE.CylinderGeometry(28, 24, 200, 12);
+      const handGeom = new THREE.SphereGeometry(30, 12, 12);
       
       // Brazo izquierdo
-      const leftUpperArm = new THREE.Mesh(armGeom, clothMat);
-      leftUpperArm.position.y = -175;
-      avatar.leftArm.add(leftUpperArm);
-      const leftForearm = new THREE.Mesh(forearmGeom, skinMat);
-      leftForearm.position.y = -350 - 150;
-      avatar.leftArm.add(leftForearm);
+      const leftUpper = new THREE.Mesh(upperArmGeom, clothMat);
+      leftUpper.position.y = -110;
+      avatar.leftArm.add(leftUpper);
+      
+      const leftFore = new THREE.Mesh(forearmGeom, skinMat);
+      leftFore.position.y = -100;
+      avatar.leftForearm.add(leftFore);
       const leftHand = new THREE.Mesh(handGeom, skinMat);
-      leftHand.position.y = -350 - 300 - 35;
-      avatar.leftArm.add(leftHand);
-      avatar.leftArm.position.set(-140, 1420, 0);
+      leftHand.position.y = -220;
+      avatar.leftForearm.add(leftHand);
+      avatar.leftForearm.position.y = -220;
+      avatar.leftArm.add(avatar.leftForearm);
+      
+      avatar.leftArm.position.set(-130, 1450, 0);
       avatar.add(avatar.leftArm);
       
       // Brazo derecho
-      const rightUpperArm = new THREE.Mesh(armGeom, clothMat);
-      rightUpperArm.position.y = -175;
-      avatar.rightArm.add(rightUpperArm);
-      const rightForearm = new THREE.Mesh(forearmGeom, skinMat);
-      rightForearm.position.y = -350 - 150;
-      avatar.rightArm.add(rightForearm);
+      const rightUpper = new THREE.Mesh(upperArmGeom, clothMat);
+      rightUpper.position.y = -110;
+      avatar.rightArm.add(rightUpper);
+      
+      const rightFore = new THREE.Mesh(forearmGeom, skinMat);
+      rightFore.position.y = -100;
+      avatar.rightForearm.add(rightFore);
       const rightHand = new THREE.Mesh(handGeom, skinMat);
-      rightHand.position.y = -350 - 300 - 35;
-      avatar.rightArm.add(rightHand);
-      avatar.rightArm.position.set(140, 1420, 0);
+      rightHand.position.y = -220;
+      avatar.rightForearm.add(rightHand);
+      avatar.rightForearm.position.y = -220;
+      avatar.rightArm.add(avatar.rightForearm);
+      
+      avatar.rightArm.position.set(130, 1450, 0);
       avatar.add(avatar.rightArm);
       
       // Piernas
-      const legGeom = new THREE.CylinderGeometry(50, 45, 450, 12);
-      const leg1 = new THREE.Mesh(legGeom, clothMat);
-      leg1.position.set(-60, 775, 0);
+      const legGeom = new THREE.CylinderGeometry(45, 40, 500, 12);
+      const leg1 = new THREE.Mesh(legGeom, pantsMat);
+      leg1.position.set(-55, 780, 0);
       avatar.add(leg1);
       const leg2 = leg1.clone();
-      leg2.position.x = 60;
+      leg2.position.x = 55;
       avatar.add(leg2);
       
-      // Pies/Botas
-      const bootGeom = new THREE.BoxGeometry(80, 100, 140);
+      // Botas de trabajo
+      const bootGeom = new THREE.BoxGeometry(90, 120, 160);
       const boot1 = new THREE.Mesh(bootGeom, bootMat);
-      boot1.position.set(-60, 500, 20);
+      boot1.position.set(-55, 470, 25);
       avatar.add(boot1);
       const boot2 = boot1.clone();
-      boot2.position.x = 60;
+      boot2.position.x = 55;
       avatar.add(boot2);
       
-      // Gorra de trabajador
-      const capGeom = new THREE.CylinderGeometry(90, 85, 40, 16);
-      const cap = new THREE.Mesh(capGeom, clothMat);
-      cap.position.y = 1680;
-      avatar.add(cap);
-      const visGeom = new THREE.CylinderGeometry(60, 70, 10, 16, 1, false, 0, Math.PI);
-      const visor = new THREE.Mesh(visGeom, clothMat);
-      visor.rotation.x = -Math.PI / 2;
-      visor.position.set(0, 1660, 70);
-      avatar.add(visor);
+      // Casco de seguridad
+      const helmetGeom = new THREE.SphereGeometry(100, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+      const helmetMat = new THREE.MeshStandardMaterial({ 
+        color: 0xf59e0b,
+        roughness: 0.3,
+        metalness: 0.2
+      });
+      const helmet = new THREE.Mesh(helmetGeom, helmetMat);
+      helmet.position.y = 1700;
+      avatar.add(helmet);
+      
+      // Visera del casco
+      const brimGeom = new THREE.CylinderGeometry(105, 110, 15, 24);
+      const brim = new THREE.Mesh(brimGeom, helmetMat);
+      brim.position.y = 1695;
+      avatar.add(brim);
+      
+      // Pescado que sostiene (entre las manos)
+      avatar.heldFish = createRealisticFish(0.8);
+      avatar.heldFish.position.set(0, -440, -80);
+      avatar.heldFish.rotation.set(0, Math.PI/2, 0);
+      avatar.heldFish.visible = true;
+      avatar.rightArm.add(avatar.heldFish);
       
       return avatar;
     }
     
-    // Crear 2 avatares
-    const avatar1 = createAvatar(0x2563eb); // Azul
-    const avatar2 = createAvatar(0x16a34a); // Verde
+    // Crear 2 avatares trabajadores
+    const avatar1 = createAvatar(0x2563eb, 'Trabajador1'); // Azul
+    const avatar2 = createAvatar(0x16a34a, 'Trabajador2'); // Verde
     
     // Posicionar detrás de pared 4, frente a los huecos
-    avatar1.position.set(h1x, 0, ROOM_L/2 + 400); // Frente al hueco 1
-    avatar1.rotation.y = Math.PI; // Mirando hacia los huecos
+    avatar1.position.set(h1x, 0, ROOM_L/2 + 350);
+    avatar1.rotation.y = Math.PI;
     scene.add(avatar1);
     
-    avatar2.position.set(h2x, 0, ROOM_L/2 + 400); // Frente al hueco 2
+    avatar2.position.set(h2x, 0, ROOM_L/2 + 350);
     avatar2.rotation.y = Math.PI;
     scene.add(avatar2);
     
-    // Pescados que caen - pool de animación
+    // Pool de pescados cayendo (realistas)
     const fallingFish = [];
-    function createFallingFish(startX, startZ) {
-      const fish = createRealisticFish(0.7);
-      fish.position.set(startX, TOBOGAN_HOLE_Y, startZ);
+    function spawnFallingFish(startX) {
+      const fish = createRealisticFish(0.8);
+      fish.position.set(startX, TOBOGAN_HOLE_Y + 50, ROOM_L/2 - 50);
       fish.userData = {
-        vx: (Math.random() - 0.5) * 5,
-        vy: 0,
-        vz: -15 - Math.random() * 5,
-        startX: startX,
-        phase: 'falling'
+        vx: (Math.random() - 0.5) * 3,
+        vy: 2,
+        vz: -12 - Math.random() * 4,
+        rotSpeed: {
+          x: (Math.random() - 0.5) * 0.1,
+          y: (Math.random() - 0.5) * 0.1,
+          z: (Math.random() - 0.5) * 0.08
+        }
       };
       scene.add(fish);
+      fallingFish.push(fish);
       return fish;
     }
     
     // Variables de animación
     let animTime = 0;
-    const animationSpeed = 0.016;
+    const CYCLE_DURATION = 2.5; // Ciclo de 2.5 segundos
     
-    // Función para animar brazos (movimiento de colocar pescado)
-    function animateAvatar(avatar, time, offset) {
-      const cycle = ((time + offset) % 3); // Ciclo de 3 segundos
+    // Animación de avatar colocando pescado
+    function animateWorker(avatar, time, offset) {
+      const cycle = ((time + offset) % CYCLE_DURATION) / CYCLE_DURATION; // 0 a 1
       
-      if (cycle < 1.5) {
-        // Fase 1: Levantar brazos hacia el hueco
-        const t = cycle / 1.5;
-        avatar.leftArm.rotation.x = -t * 1.2;
-        avatar.rightArm.rotation.x = -t * 1.2;
-        avatar.leftArm.rotation.z = t * 0.3;
-        avatar.rightArm.rotation.z = -t * 0.3;
+      // Fases: 0-0.3 levantar, 0.3-0.5 sostener/avanzar, 0.5-0.6 soltar, 0.6-1 regresar
+      let armAngle, forearmAngle, showFish;
+      
+      if (cycle < 0.3) {
+        // Levantar brazos con pescado
+        const t = cycle / 0.3;
+        armAngle = -t * 1.8;
+        forearmAngle = -t * 0.8;
+        showFish = true;
+      } else if (cycle < 0.5) {
+        // Sostener arriba (cerca del hueco)
+        armAngle = -1.8;
+        forearmAngle = -0.8;
+        showFish = true;
+      } else if (cycle < 0.6) {
+        // Momento de soltar
+        const t = (cycle - 0.5) / 0.1;
+        armAngle = -1.8 + t * 0.3;
+        forearmAngle = -0.8 + t * 0.3;
+        showFish = false;
       } else {
-        // Fase 2: Soltar y bajar brazos
-        const t = (cycle - 1.5) / 1.5;
-        avatar.leftArm.rotation.x = -1.2 + t * 1.2;
-        avatar.rightArm.rotation.x = -1.2 + t * 1.2;
-        avatar.leftArm.rotation.z = 0.3 - t * 0.3;
-        avatar.rightArm.rotation.z = -0.3 + t * 0.3;
+        // Bajar brazos
+        const t = (cycle - 0.6) / 0.4;
+        armAngle = -1.5 + t * 1.5;
+        forearmAngle = -0.5 + t * 0.5;
+        showFish = t > 0.7; // Nuevo pescado aparece al final
       }
+      
+      // Aplicar rotaciones
+      avatar.leftArm.rotation.x = armAngle;
+      avatar.rightArm.rotation.x = armAngle;
+      avatar.leftArm.rotation.z = 0.2;
+      avatar.rightArm.rotation.z = -0.2;
+      avatar.leftForearm.rotation.x = forearmAngle;
+      avatar.rightForearm.rotation.x = forearmAngle;
+      
+      // Mostrar/ocultar pescado en manos
+      avatar.heldFish.visible = showFish;
+      
+      return { cycle, released: cycle >= 0.5 && cycle < 0.52 };
     }
+    
+    // Track último spawn para cada avatar
+    let lastSpawn1 = -1, lastSpawn2 = -1;
 
     function animate() {
       requestAnimationFrame(animate);
       
-      animTime += animationSpeed;
+      animTime += 0.016;
       
-      // Animar avatares
-      animateAvatar(avatar1, animTime, 0);
-      animateAvatar(avatar2, animTime, 1.5); // Desfasado
-      
-      // Crear pescados nuevos periódicamente
-      if (Math.floor(animTime * 10) % 30 === 0 && fallingFish.length < 10) {
-        const whichHole = Math.random() > 0.5 ? h1x : h2x;
-        fallingFish.push(createFallingFish(whichHole, ROOM_L/2));
+      // Animar avatar 1
+      const state1 = animateWorker(avatar1, animTime, 0);
+      if (state1.released && lastSpawn1 !== Math.floor(animTime / CYCLE_DURATION)) {
+        spawnFallingFish(h1x);
+        lastSpawn1 = Math.floor(animTime / CYCLE_DURATION);
       }
       
-      // Animar pescados cayendo
+      // Animar avatar 2 (desfasado)
+      const state2 = animateWorker(avatar2, animTime, CYCLE_DURATION / 2);
+      if (state2.released && lastSpawn2 !== Math.floor((animTime + CYCLE_DURATION/2) / CYCLE_DURATION)) {
+        spawnFallingFish(h2x);
+        lastSpawn2 = Math.floor((animTime + CYCLE_DURATION/2) / CYCLE_DURATION);
+      }
+      
+      // Física de pescados cayendo
       for (let i = fallingFish.length - 1; i >= 0; i--) {
         const fish = fallingFish[i];
-        fish.userData.vy -= 0.5; // Gravedad
+        
+        // Gravedad
+        fish.userData.vy -= 0.8;
+        
+        // Mover
         fish.position.x += fish.userData.vx;
         fish.position.y += fish.userData.vy;
         fish.position.z += fish.userData.vz;
-        fish.rotation.x += 0.05;
-        fish.rotation.z += 0.03;
         
-        // Si llegó al bin, remover
-        if (fish.position.y < BIN_THK + 100) {
+        // Rotar naturalmente
+        fish.rotation.x += fish.userData.rotSpeed.x;
+        fish.rotation.y += fish.userData.rotSpeed.y;
+        fish.rotation.z += fish.userData.rotSpeed.z;
+        
+        // Remover cuando llegue al nivel del bin
+        if (fish.position.y < 200) {
           scene.remove(fish);
           fallingFish.splice(i, 1);
         }
+      }
+      
+      // Limitar pescados en escena
+      while (fallingFish.length > 15) {
+        scene.remove(fallingFish[0]);
+        fallingFish.shift();
       }
       
       controls.update();
