@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v1.3.0</div>
+    <div class="badge" id="version-badge">v1.3.1</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -58,7 +58,7 @@
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-    const APP_VERSION = 'v1.3.0';
+    const APP_VERSION = 'v1.3.1';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -334,8 +334,8 @@
       object.rotation.y = Math.PI;
       
       // Posicionar: parte delantera a altura del bin, parte trasera en pared 4
-      // Movidos hacia bin, pared 2 y pared 4
-      object.position.set(1600, 900, 1200);
+      // Tobogán derecho (cerca pared 2)
+      object.position.set(1400, 900, 1200);
       
       // Aplicar material acero inoxidable a todos los meshes
       const stainlessSteelMat = new THREE.MeshStandardMaterial({
@@ -354,9 +354,9 @@
       
       scene.add(object);
       
-      // Duplicar tobogán para el segundo
+      // Duplicar tobogán para el segundo (tobogán izquierdo)
       const tobogan2 = object.clone();
-      tobogan2.position.set(400, 900, 1200);
+      tobogan2.position.set(700, 900, 1200);
       scene.add(tobogan2);
       
       console.log('Toboganes cargados exitosamente');
