@@ -35,7 +35,7 @@
 <body>
   <div id="ui-panel">
     <button class="btn" id="btn-toggle-walls">Ocultar paneles</button>
-    <div class="badge" id="version-badge">v1.0.0</div>
+    <div class="badge" id="version-badge">v1.0.1</div>
     <button class="btn btn-icon" id="btn-refresh" title="Refrescar">🔄</button>
   </div>
   <div id="view-panel">
@@ -57,7 +57,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const APP_VERSION = 'v1.0.0';
+    const APP_VERSION = 'v1.0.1';
     document.getElementById('version-badge').textContent = APP_VERSION;
 
     // Sistema anti-caché: verificar nueva versión cada 30 segundos
@@ -149,12 +149,21 @@
     const halfW = ROOM_W / 2 - WALL_THK / 2, halfL = ROOM_L / 2 - WALL_THK / 2, wallH = ROOM_H - 100;
     
     const PANEL_WIDTH = 1000;
+    const BASEBOARD_HEIGHT = 200; // Zócalo de 20cm
+    const baseboardMat = new THREE.MeshStandardMaterial({ color: 0x5a5a5a, roughness: 0.9 });
     
-    // Pared 3 (frontal, -z): paneles de 1m con bordes
+    // Pared 3 (frontal, -z): paneles de 1m con bordes + zócalo
+    const baseboard3 = new THREE.Mesh(
+      new THREE.BoxGeometry(ROOM_W, BASEBOARD_HEIGHT, WALL_THK),
+      baseboardMat
+    );
+    baseboard3.position.set(0, BASEBOARD_HEIGHT/2, -halfL);
+    wallGroup.add(baseboard3);
+    
     for (let i = 0; i < 4; i++) {
-      const panelGeom = new THREE.BoxGeometry(PANEL_WIDTH, wallH, WALL_THK);
+      const panelGeom = new THREE.BoxGeometry(PANEL_WIDTH, wallH - BASEBOARD_HEIGHT, WALL_THK);
       const panel = new THREE.Mesh(panelGeom, wallMat);
-      panel.position.set(-ROOM_W/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH, wallH/2, -halfL);
+      panel.position.set(-ROOM_W/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, -halfL);
       panel.renderOrder = 999;
       wallGroup.add(panel);
       
@@ -168,10 +177,25 @@
     // Entrada: 2000mm ancho x 2000mm alto, comenzando 500mm desde esquina
     const DOOR_HEIGHT = 2000;
     
+    // Zócalo pared 4 (sin entrada en la base)
+    const baseboard4a = new THREE.Mesh(
+      new THREE.BoxGeometry(500, BASEBOARD_HEIGHT, WALL_THK),
+      baseboardMat
+    );
+    baseboard4a.position.set(-ROOM_W/2 + 250, BASEBOARD_HEIGHT/2, halfL);
+    wallGroup.add(baseboard4a);
+    
+    const baseboard4b = new THREE.Mesh(
+      new THREE.BoxGeometry(1500, BASEBOARD_HEIGHT, WALL_THK),
+      baseboardMat
+    );
+    baseboard4b.position.set(ROOM_W/2 - 750, BASEBOARD_HEIGHT/2, halfL);
+    wallGroup.add(baseboard4b);
+    
     // Panel izquierdo: -2000 a -1500 (500mm, altura completa)
-    const panel4aGeom = new THREE.BoxGeometry(500, wallH, WALL_THK);
+    const panel4aGeom = new THREE.BoxGeometry(500, wallH - BASEBOARD_HEIGHT, WALL_THK);
     const panel4a = new THREE.Mesh(panel4aGeom, wallMat);
-    panel4a.position.set(-ROOM_W/2 + 250, wallH/2, halfL);
+    panel4a.position.set(-ROOM_W/2 + 250, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, halfL);
     panel4a.renderOrder = 999;
     wallGroup.add(panel4a);
     const edges4a = new THREE.LineSegments(new THREE.EdgesGeometry(panel4aGeom), edgeMat);
@@ -190,20 +214,27 @@
     wallGroup.add(edges4top);
     
     // Panel derecho: 500 a 2000 (1500mm, altura completa)
-    const panel4bGeom = new THREE.BoxGeometry(1500, wallH, WALL_THK);
+    const panel4bGeom = new THREE.BoxGeometry(1500, wallH - BASEBOARD_HEIGHT, WALL_THK);
     const panel4b = new THREE.Mesh(panel4bGeom, wallMat);
-    panel4b.position.set(ROOM_W/2 - 750, wallH/2, halfL);
+    panel4b.position.set(ROOM_W/2 - 750, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, halfL);
     panel4b.renderOrder = 999;
     wallGroup.add(panel4b);
     const edges4b = new THREE.LineSegments(new THREE.EdgesGeometry(panel4bGeom), edgeMat);
     edges4b.position.copy(panel4b.position);
     wallGroup.add(edges4b);
     
-    // Pared 1 (izquierda, -x): paneles de 1m con bordes
+    // Pared 1 (izquierda, -x): paneles de 1m con bordes + zócalo
+    const baseboard1 = new THREE.Mesh(
+      new THREE.BoxGeometry(WALL_THK, BASEBOARD_HEIGHT, ROOM_L),
+      baseboardMat
+    );
+    baseboard1.position.set(-halfW, BASEBOARD_HEIGHT/2, 0);
+    wallGroup.add(baseboard1);
+    
     for (let i = 0; i < 4; i++) {
-      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH);
+      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH - BASEBOARD_HEIGHT, PANEL_WIDTH);
       const panel = new THREE.Mesh(panelGeom, wallMat);
-      panel.position.set(-halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
+      panel.position.set(-halfW, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
       panel.renderOrder = 999;
       wallGroup.add(panel);
       
@@ -212,11 +243,18 @@
       wallGroup.add(edges);
     }
     
-    // Pared 2 (derecha, +x): paneles de 1m con bordes
+    // Pared 2 (derecha, +x): paneles de 1m con bordes + zócalo
+    const baseboard2 = new THREE.Mesh(
+      new THREE.BoxGeometry(WALL_THK, BASEBOARD_HEIGHT, ROOM_L),
+      baseboardMat
+    );
+    baseboard2.position.set(halfW, BASEBOARD_HEIGHT/2, 0);
+    wallGroup.add(baseboard2);
+    
     for (let i = 0; i < 4; i++) {
-      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH, PANEL_WIDTH);
+      const panelGeom = new THREE.BoxGeometry(WALL_THK, wallH - BASEBOARD_HEIGHT, PANEL_WIDTH);
       const panel = new THREE.Mesh(panelGeom, wallMat);
-      panel.position.set(halfW, wallH/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
+      panel.position.set(halfW, BASEBOARD_HEIGHT + (wallH - BASEBOARD_HEIGHT)/2, -ROOM_L/2 + PANEL_WIDTH/2 + i * PANEL_WIDTH);
       panel.renderOrder = 999;
       wallGroup.add(panel);
       
