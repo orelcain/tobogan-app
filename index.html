@@ -493,6 +493,9 @@
       
       object.traverse((child) => {
         if (child.isMesh) {
+          // Log para ver estructura del modelo
+          console.log('Mesh encontrado:', child.name, child);
+          
           child.material = comicToboganMat;
           // Agregar wireframe estilo sketch
           const wireframe = new THREE.LineSegments(
